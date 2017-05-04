@@ -8,6 +8,10 @@ require('codemirror/mode/lua/lua')
 const {db, onStateChange} = require('./db')
 const log = require('./log')
 
+const defaultluacode = `-- lua script here.
+
+`
+
 module.exports = createClass({
   displayName: 'Rules',
   getInitialState () {
@@ -15,8 +19,7 @@ module.exports = createClass({
       rules: [],
 
       newpattern: '',
-      newcode: `local x = 23
-print(store, timestamp, line, match)`
+      newcode: defaultluacode
     }
   },
 
@@ -30,7 +33,7 @@ print(store, timestamp, line, match)`
 
   render () {
     return (
-      h('div', [
+      h('div#Rules', [
         h('.card', [
           h('.card-header', [
             h('span.card-header-title', 'Create new rule')
@@ -63,7 +66,7 @@ print(store, timestamp, line, match)`
           ])
         ]),
         h('div', this.state.rules.map(({_id, _rev, pattern, code}) =>
-          h('.card', [
+          h('.card.rule', {key: _id}, [
             h('.card-header', [
               h('span.card-header-title', `rule ${_id.split(':')[1]}`),
               h('a.card-header-icon', { onClick: e => this.remove(_id, _rev, e) }, [
@@ -110,7 +113,13 @@ print(store, timestamp, line, match)`
       pattern: this.state.newpattern,
       code: this.state.newcode
     })
-    .then(() => log.info(`rule ${cid} created.`))
+    .then(() => {
+      this.setState({
+        newpattern: '',
+        newcode: defaultluacode
+      })
+      log.info(`rule ${cid} created.`)
+    })
     .then(() => this.forceUpdate())
     .catch(log.error)
   },

@@ -2,12 +2,16 @@ html, body { min-height: 100vh; }
 
 body { background-color: #abed70; }
 
-#main {
-
+main {
+  padding-top: 30px;
 }
 
-#Input .card-header { display: none; }
-#Input .card:hover .card-header { display: flex; }
+#Input {}
+#Input .fact .card-header { display: none; }
+#Input .fact:hover .card-header { display: flex; }
+#Input .fact .card-content .column:last-child { text-align: right; }
+
+#Facts {}
 
 .container {
   padding: 20px;

@@ -7,5 +7,5 @@ const Main = require('./Main')
 
 render(
   React.createElement(Main),
-  document.getElementById('main')
+  document.getElementById('root')
 )

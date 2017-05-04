@@ -3,6 +3,7 @@ const h = require('react-hyperscript')
 
 const {db, onStateChange} = require('./db')
 const log = require('./log')
+const dateFormat = require('./helpers/date').asLongAsNeeded
 
 module.exports = createClass({
   displayName: 'Input',
@@ -35,15 +36,18 @@ module.exports = createClass({
           h('button.button', {type: 'submit'}, 'Save')
         ]),
         h('div', this.state.facts.map(({line, _id, _rev}) =>
-          h('.card', [
+          h('.card.fact', {key: _id}, [
             h('.card-header', [
-              h('span.card-header-title', _id),
+              h('span.card-header-title', `id: ${_id}, rev: ${_rev}`),
               h('a.card-header-icon', { onClick: e => this.remove(_id, _rev, e) }, [
                 h('span.icon', [ h('i.fa.fa-trash') ])
               ])
             ]),
             h('.card-content', [
-              h('p', line)
+              h('.columns', [
+                h('.column', line),
+                h('.column.is-one-quarter', dateFormat(_id))
+              ])
             ])
           ])
         ))

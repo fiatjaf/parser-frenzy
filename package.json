@@ -35,7 +35,7 @@
   "dependencies": {
     "create-react-class": "^15.5.2",
     "cuid": "^1.3.8",
-    "glua": "0.0.1",
+    "glua": "^0.1.2",
     "page": "^1.7.1",
     "pouchdb-browser": "^6.2.0",
     "react": "^15.5.4",

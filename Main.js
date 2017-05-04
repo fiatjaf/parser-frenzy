@@ -45,7 +45,7 @@ module.exports = createClass({
             h('a.nav-item', {href: '/browse/'}, 'browse')
           ])
         ]),
-        h('.columns', [
+        h('main.columns', [
           h('.column.is-10.is-offset-1', [
             h(this.state.route.component, this.state.route.props)
           ])
