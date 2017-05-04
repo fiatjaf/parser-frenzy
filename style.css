@@ -53,6 +53,11 @@ table.table td {
   height: auto !important;
 }
 
+.notie-container {
+  top: auto !important;
+  bottom: 0;
+}
+
 /* balloons.css */
 button[title] {
   overflow: visible;
