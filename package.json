@@ -1,0 +1,55 @@
+{
+  "name": "parser-frenzy",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "watch": "find -name \"*.js\" ! -name \"bundle.js\" ! -path \"*node_modules*\" | entr browserifyinc -vd app.js -o bundle.js",
+    "build": "browserify app.js -o bundle.js",
+    "build-prod": "npm run build"
+  },
+  "browserify": {
+    "transform": [
+      [
+        "bubleify",
+        {
+          "transforms": {
+            "dangerousTaggedTemplateString": true
+          },
+          "objectAssign": "xtend",
+          "sourceMap": true
+        }
+      ]
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fiatjaf/parser-frenzy.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/fiatjaf/parser-frenzy/issues"
+  },
+  "homepage": "https://github.com/fiatjaf/parser-frenzy#readme",
+  "dependencies": {
+    "create-react-class": "^15.5.2",
+    "cuid": "^1.3.8",
+    "glua": "0.0.1",
+    "page": "^1.7.1",
+    "pouchdb-browser": "^6.2.0",
+    "react": "^15.5.4",
+    "react-codemirror": "^0.3.0",
+    "react-dom": "^15.5.4",
+    "react-hyperscript": "^3.0.0",
+    "riek": "^1.0.7",
+    "tiny-emitter": "^2.0.0",
+    "xtend": "^4.0.1"
+  },
+  "devDependencies": {
+    "browserify": "^14.3.0",
+    "browserify-incremental": "^3.1.1",
+    "buble": "^0.15.2",
+    "bubleify": "^0.7.0"
+  }
+}
