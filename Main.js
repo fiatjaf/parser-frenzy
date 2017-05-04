@@ -18,15 +18,19 @@ module.exports = createClass({
   },
 
   componentDidMount () {
-    page('/', '/input/')
-    page('/input/', ctx =>
-      this.setState({route: {component: Input, props: ctx.params}})
-    )
-    page('/rules/', ctx =>
-      this.setState({route: {component: Rules, props: ctx.params}})
-    )
-    page('/browse/', ctx =>
-      this.setState({route: {component: Browse, props: ctx.params}})
+    page('/', '/input')
+    page('/input', ctx => this.setState({route: {component: Input, props: ctx.params}}))
+    page('/rules', ctx => this.setState({route: {component: Rules, props: ctx.params}}))
+    page('/browse', () => this.setState({route: {component: Browse}}))
+    page('/browse/*', ctx =>
+      this.setState({
+        route: {
+          component: Browse,
+          props: {
+            path: ctx.params[0].split('/').filter(x => x)
+          }
+        }
+      })
     )
 
     page({hashbang: true})

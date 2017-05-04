@@ -7,9 +7,15 @@ main {
 }
 
 #Input {}
-#Input .fact .card-header { display: none; }
-#Input .fact:hover .card-header { display: flex; }
-#Input .fact .card-content .column:last-child { text-align: right; }
+  #Input .fact .card-content .column:last-child { text-align: right; }
+  #Input .fact .columns { margin-bottom: -.75rem; }
+
+  #Input .fact .affected,
+  #Input .fact .card-header,
+  #Input .fact .card-footer { display: none; }
+    #Input .fact:hover .affected { display: block; }
+    #Input .fact:hover .card-header,
+    #Input .fact:hover .card-footer { display: flex; }
 
 #Facts {}
 
@@ -21,10 +27,6 @@ main {
 .subtitle { color: inherit; }
 .content { color: inherit; }
 .table { color: inherit; background-color: inherit; }
-
-a { color: #5ab6f0; }
-a:hover { color: #009CDE; }
-a:active { color: #009CDE; }
 
 nav.nav {
 

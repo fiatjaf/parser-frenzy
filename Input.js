@@ -12,7 +12,7 @@ module.exports = createClass({
       facts: [],
 
       input: '',
-      preview: ''
+      preview: null
     }
   },
 
@@ -35,18 +35,29 @@ module.exports = createClass({
           }),
           h('button.button', {type: 'submit'}, 'Save')
         ]),
-        h('div', this.state.facts.map(({line, _id, _rev}) =>
+        h('div', this.state.facts.map(({line, _id, _rev, affected}) =>
           h('.card.fact', {key: _id}, [
-            h('.card-header', [
-              h('span.card-header-title', `id: ${_id}, rev: ${_rev}`),
-              h('a.card-header-icon', { onClick: e => this.remove(_id, _rev, e) }, [
-                h('span.icon', [ h('i.fa.fa-trash') ])
-              ])
-            ]),
             h('.card-content', [
               h('.columns', [
                 h('.column', line),
                 h('.column.is-one-quarter', dateFormat(_id))
+              ]),
+              h('ul.affected',
+                affected.length && affected.map(({kind, at, val}) =>
+                  h('li', [
+                    h('code', kind), ' at ',
+                    h('a', {href: '/browse/' + at.join('/')}, at.join('.')),
+                    ' with value ', h('code', val), '.'
+                  ])
+                ) || [ h('center', "~ this line hasn't affected the store ~") ]
+              )
+            ]),
+            h('.card-footer', [
+              h('.card-footer-item', [
+                h('a', {onClick: e => this.remove(_id, _rev, e)}, [
+                  h('span.icon', [ h('i.fa.fa-trash') ]),
+                  ' Delete'
+                ])
               ])
             ])
           ])
@@ -61,7 +72,10 @@ module.exports = createClass({
       _id: `f:${(new Date).getTime()}`,
       line: this.state.input
     })
-    .then(() => log.info('added.'))
+    .then(() => {
+      log.info('added.')
+      this.setState({input: '', preview: null})
+    })
     .then(() => this.forceUpdate())
     .catch(log.error)
   },

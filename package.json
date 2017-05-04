@@ -1,7 +1,7 @@
 {
   "name": "parser-frenzy",
   "version": "1.0.0",
-  "description": "",
+  "description": "an app that allows developers to build intelligent and offline-first data-entry apps for normal people.",
   "main": "app.js",
   "scripts": {
     "watch": "find -name \"*.js\" ! -name \"bundle.js\" ! -path \"*node_modules*\" | entr browserifyinc -vd app.js -o bundle.js",
@@ -26,11 +26,8 @@
     "type": "git",
     "url": "git+https://github.com/fiatjaf/parser-frenzy.git"
   },
-  "author": "",
+  "author": "Giovanni T. Parra",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/fiatjaf/parser-frenzy/issues"
-  },
   "homepage": "https://github.com/fiatjaf/parser-frenzy#readme",
   "dependencies": {
     "create-react-class": "^15.5.2",

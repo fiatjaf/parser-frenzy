@@ -77,8 +77,11 @@ db.changes({live: true, include_docs: true, since: 'now'})
   })
   .on('error', log.error)
 
-function process (doc) {
-  let {_id, line} = doc
+function process (fact) {
+  // cleanup affected paths
+  fact.affected = []
+
+  let {_id, line} = fact
   let timestamp = _id.split(':')[1]
   for (let p = 0; p < rules.length; p++) {
     let {pattern, code} = rules[p]
@@ -89,10 +92,10 @@ function process (doc) {
           timestamp,
           line,
           match,
-          set_at,
-          inc_at,
-          push_to,
-          update_at
+          set_at: set_at.bind({affected: fact.affected, kind: 'set'}),
+          inc_at: inc_at.bind({affected: fact.affected, kind: 'inc'}),
+          push_to: push_to.bind({affected: fact.affected, kind: 'push'}),
+          update_at: update_at.bind({affected: fact.affected, kind: 'update'})
         }, code)
       } catch (e) {
         log.debug(e)
@@ -102,6 +105,8 @@ function process (doc) {
 }
 
 function update_at (path, fn) {
+  var arraypath = []
+
   var cur = store
   var prev
   var i = 1
@@ -109,6 +114,7 @@ function update_at (path, fn) {
   while (true) {
     if (path[i]) {
       key = path[i]
+      arraypath.push(key)
       prev = cur
       cur[key] = cur[key] || {}
       cur = cur[key]
@@ -117,13 +123,18 @@ function update_at (path, fn) {
     }
     break
   }
-  prev[key] = fn(cur)
-}
+  let val = fn(cur)
+  prev[key] = val
 
-function inc_at (path) { update_at(path, cur => cur + 1) }
-function set_at (path, elem) { update_at(path, () => elem) }
+  // save affected paths
+  this.affected.push({kind: this.kind, at: arraypath, val: this.val || val})
+}
+function inc_at (path) { update_at.call(this, path, cur => cur + 1) }
+function set_at (path, val) { update_at.call(this, path, () => val) }
 function push_to (path, elem) {
-  update_at(path, cur => {
+  this.val = elem
+
+  update_at.call(this, path, cur => {
     if (!Array.isArray(cur)) {
       cur = []
     }
