@@ -78,8 +78,9 @@ db.changes({live: true, include_docs: true, since: 'now'})
   .on('error', log.error)
 
 function process (fact) {
-  // cleanup affected paths
+  // cleanup affected paths and errors
   fact.affected = []
+  fact.errors = []
 
   let {_id, line} = fact
   let timestamp = _id.split(':')[1]
@@ -92,12 +93,18 @@ function process (fact) {
           timestamp,
           line,
           match,
+
+          // functions that modify the underlying store
           set_at: set_at.bind({affected: fact.affected, kind: 'set'}),
-          inc_at: inc_at.bind({affected: fact.affected, kind: 'inc'}),
+          sum_at: sum_at.bind({affected: fact.affected, kind: 'sum'}),
           push_to: push_to.bind({affected: fact.affected, kind: 'push'}),
+          remove_from: remove_from.bind({affected: fact.affected, kind: 'remove'}),
           update_at: update_at.bind({affected: fact.affected, kind: 'update'})
+          // the binding is necessary to keep track of `affected`.
+
         }, code)
       } catch (e) {
+        fact.errors.push({error: e, rule: rules[p]})
         log.debug(e)
       }
     }
@@ -129,16 +136,33 @@ function update_at (path, fn) {
   // save affected paths
   this.affected.push({kind: this.kind, at: arraypath, val: this.val || val})
 }
-function inc_at (path) { update_at.call(this, path, cur => cur + 1) }
+function sum_at (path, val) {
+  this.val = val
+  update_at.call(this, path, cur => (typeof cur === 'number' ? cur : 0) + val)
+}
 function set_at (path, val) { update_at.call(this, path, () => val) }
 function push_to (path, elem) {
   this.val = elem
-
   update_at.call(this, path, cur => {
     if (!Array.isArray(cur)) {
       cur = []
     }
     cur.push(elem)
+    return cur
+  })
+}
+function remove_from (path, elem) {
+  this.val = elem
+  update_at.call(this, path, cur => {
+    if (!Array.isArray(cur)) {
+      return []
+    }
+
+    while (cur.indexOf(elem) !== -1) {
+      let index = cur.indexOf(elem)
+      cur.splice(index, 1)
+    }
+
     return cur
   })
 }

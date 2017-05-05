@@ -11,9 +11,11 @@ main {
   #Input .fact .columns { margin-bottom: -.75rem; }
 
   #Input .fact .affected,
+  #Input .fact .errors,
   #Input .fact .card-header,
   #Input .fact .card-footer { display: none; }
-    #Input .fact:hover .affected { display: block; }
+    #Input .fact:hover .affected,
+    #Input .fact:hover .errors { display: block; }
     #Input .fact:hover .card-header,
     #Input .fact:hover .card-footer { display: flex; }
 

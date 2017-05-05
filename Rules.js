@@ -32,75 +32,84 @@ module.exports = createClass({
   },
 
   render () {
-    return (
-      h('div#Rules', [
-        h('.card', [
-          h('.card-header', [
-            h('span.card-header-title', 'Create new rule')
-          ]),
-          h('.card-content', [
-            h('form', {
-              onSubmit: this.create
-            }, [
-              h('p.control', [
-                h('input.input', {
-                  value: this.state.newpattern,
-                  onChange: e => { this.setState({newpattern: e.target.value}) },
-                  title: 'a valid Javascript regex pattern',
-                  placeholder: `\\w{2,5}: +\\d\\d(,\\d\\d)?`
-                })
-              ]),
-              h('div.control', [
-                h(CodeMirror, {
-                  value: this.state.newcode,
-                  onChange: newcode => { this.setState({newcode}) },
-                  title: 'lua code that will change the store in response to a line that matches',
-                  options: {
-                    viewportMargin: Infinity,
-                    mode: 'lua'
-                  }
-                })
-              ]),
-              h('button.button', 'Create')
-            ])
+    var rules = this.state.rules
+
+    if (this.props.rule) {
+      rules = rules.filter(({_id}) => _id === this.props.rule)
+    }
+
+    let renderRule = ({_id, _rev, pattern, code}) =>
+      h('.card.rule', {key: _id}, [
+        h('.card-header', [
+          h('span.card-header-title', `rule ${_id.split(':')[1]}`),
+          h('a.card-header-icon', { onClick: e => this.remove(_id, _rev, e) }, [
+            h('span.icon', [ h('i.fa.fa-trash') ])
           ])
         ]),
-        h('div', this.state.rules.map(({_id, _rev, pattern, code}) =>
-          h('.card.rule', {key: _id}, [
-            h('.card-header', [
-              h('span.card-header-title', `rule ${_id.split(':')[1]}`),
-              h('a.card-header-icon', { onClick: e => this.remove(_id, _rev, e) }, [
-                h('span.icon', [ h('i.fa.fa-trash') ])
-              ])
+        h('.card-content', [
+          h('form', {
+            onSubmit: e => this.update(_id, _rev, e)
+          }, [
+            h('p.control', [
+              h('input.input', {
+                defaultValue: pattern
+              })
             ]),
-            h('.card-content', [
-              h('form', {
-                onSubmit: e => this.update(_id, _rev, e)
-              }, [
-                h('p.control', [
-                  h('input.input', {
-                    defaultValue: pattern
-                  })
-                ]),
-                h('div.control', [
-                  h(CodeMirror, {
-                    value: code,
-                    ref: cmp => {
-                      if (!cmp) return
-                      let cm = cmp.getCodeMirror()
-                      cm.on('changes', () => { cm.save() })
-                    },
-                    options: {
-                      viewportMargin: Infinity,
-                      mode: 'lua'
-                    }
-                  })
-                ]),
-                h('button.button', {type: 'submit'}, 'Update')
-              ])
-            ])
+            h('div.control', [
+              h(CodeMirror, {
+                value: code,
+                ref: cmp => {
+                  if (!cmp) return
+                  let cm = cmp.getCodeMirror()
+                  cm.on('changes', () => { cm.save() })
+                },
+                options: {
+                  viewportMargin: Infinity,
+                  mode: 'lua'
+                }
+              })
+            ]),
+            h('button.button', {type: 'submit'}, 'Update')
           ])
-        ))
+        ])
+      ])
+
+    let createRule = h('.card', [
+      h('.card-header', [
+        h('span.card-header-title', 'Create new rule')
+      ]),
+      h('.card-content', [
+        h('form', {
+          onSubmit: this.create
+        }, [
+          h('p.control', [
+            h('input.input', {
+              value: this.state.newpattern,
+              onChange: e => { this.setState({newpattern: e.target.value}) },
+              title: 'a valid Javascript regex pattern',
+              placeholder: `\\w{2,5}: +\\d\\d(,\\d\\d)?`
+            })
+          ]),
+          h('div.control', [
+            h(CodeMirror, {
+              value: this.state.newcode,
+              onChange: newcode => { this.setState({newcode}) },
+              title: 'lua code that will change the store in response to a line that matches',
+              options: {
+                viewportMargin: Infinity,
+                mode: 'lua'
+              }
+            })
+          ]),
+          h('button.button', 'Create')
+        ])
+      ])
+    ])
+
+    return (
+      h('div#Rules', [
+        !this.props.rule ? createRule : null,
+        h('div', rules.map(renderRule))
       ])
     )
   },

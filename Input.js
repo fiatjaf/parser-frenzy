@@ -35,7 +35,7 @@ module.exports = createClass({
           }),
           h('button.button', {type: 'submit'}, 'Save')
         ]),
-        h('div', this.state.facts.map(({line, _id, _rev, affected}) =>
+        h('div', this.state.facts.map(({line, _id, _rev, affected, errors}) =>
           h('.card.fact', {key: _id}, [
             h('.card-content', [
               h('.columns', [
@@ -50,7 +50,13 @@ module.exports = createClass({
                     ' with value ', h('code', val), '.'
                   ])
                 ) || [ h('center', "~ this line hasn't affected the store ~") ]
-              )
+              ),
+              h('ul.errors', errors.map(({error, rule}) =>
+                h('li', [
+                  'error ', h('code', error.message), ' on rule ',
+                  h('a', {href: `/rules/${rule._id}`}, rule.pattern), '.'
+                ])
+              ))
             ]),
             h('.card-footer', [
               h('.card-footer-item', [
