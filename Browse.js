@@ -1,5 +1,6 @@
 const createClass = require('create-react-class')
 const h = require('react-hyperscript')
+const JSONView = require('react-json-view').default
 
 const {onStateChange} = require('./db')
 
@@ -29,16 +30,24 @@ module.exports = createClass({
       cur = cur[this.props.path[i]]
     }
 
+    let rootName = this.props.path.length ? this.props.path.join('.') : ':root'
+
     return (
       h('#Browse', [
         h('p', [
           'data at ',
-          this.props.path.length ? h('code', this.props.path.join('.')) : 'root',
+          h('code', rootName),
           ':'
         ]),
-        h('pre', [
-          h('code', JSON.stringify(cur, null, 2))
-        ])
+        typeof cur === 'object'
+        ? h(JSONView, {
+          src: cur,
+          name: rootName,
+          indentWidth: 2,
+          displayDataTypes: false,
+          theme: 'eighties'
+        })
+        : h('pre', [ h('code', JSON.stringify(cur, null, 2)) ])
       ])
     )
   }

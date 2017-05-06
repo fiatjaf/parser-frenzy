@@ -1,6 +1,7 @@
 const PouchDB = require('pouchdb-browser')
 const Emitter = require('tiny-emitter')
 const glua = require('glua')
+const deepmerge = require('deepmerge')
 
 const log = require('./log')
 
@@ -105,6 +106,7 @@ function process (fact) {
 
           // functions that modify the underlying store
           set_at: set_at.bind({affected: fact.affected, kind: 'set'}),
+          merge_at: merge_at.bind({affected: fact.affected, kind: 'merge'}),
           sum_at: sum_at.bind({affected: fact.affected, kind: 'sum'}),
           push_to: push_to.bind({affected: fact.affected, kind: 'push'}),
           remove_from: remove_from.bind({affected: fact.affected, kind: 'remove'}),
@@ -153,6 +155,11 @@ function sum_at (path, val) {
   update_at.call(this, path, cur => (typeof cur === 'number' ? cur : 0) + val)
 }
 function set_at (path, val) { update_at.call(this, path, () => val) }
+function merge_at (path, val) {
+  update_at.call(this, path, cur =>
+    deepmerge(cur, val, {arrayMerge: (d, s) => s.concat(d)})
+  )
+}
 function push_to (path, elem) {
   this.val = elem
   update_at.call(this, path, cur => {

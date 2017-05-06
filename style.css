@@ -1,6 +1,6 @@
 html, body { min-height: 100vh; }
 
-body { background-color: #3273dc; }
+body { background-color: rgba(161, 228, 7, 0.44); }
 
 main {
   padding-top: 30px;
@@ -27,6 +27,9 @@ main {
   #Rules .create { background: #fafaef; }
   #Rules .rule {}
     #Rules .rule .card-header { background: #fafaef; }
+
+#Browse {}
+  #Browse .react-json-view { padding: 18px; }
 
 .container {
   padding: 20px;

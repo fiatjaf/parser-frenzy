@@ -81,26 +81,25 @@ module.exports = createClass({
           ])
         ]),
         h('.card-content', [
-          h('form', [
-            h('p.control', [
-              h('input.input', {
-                defaultValue: pattern
-              })
-            ]),
-            h('div.control', [
-              h(CodeMirror, {
-                value: code,
-                ref: cmp => {
-                  if (!cmp) return
-                  let cm = cmp.getCodeMirror()
-                  cm.on('changes', () => { cm.save() })
-                },
-                options: {
-                  viewportMargin: Infinity,
-                  mode: 'lua'
-                }
-              })
-            ])
+          h('p.control', [
+            h('input.input', {
+              defaultValue: pattern
+            })
+          ]),
+          h('div.control', [
+            h(CodeMirror, {
+              value: code,
+              ref: cmp => {
+                if (!cmp) return
+                let cm = cmp.getCodeMirror()
+                cm.on('changes', () => { cm.save() })
+              },
+              options: {
+                viewportMargin: Infinity,
+                mode: 'lua',
+                readOnly: !opened
+              }
+            })
           ]),
           opened && h('ul.facts', facts.map(fact =>
             h('li', [ 'matched ', h('code', fact.line) ])
@@ -157,11 +156,12 @@ module.exports = createClass({
 
   update (_id, _rev, e) {
     e.preventDefault()
+    let thisruleelem = e.target.parentNode.parentNode.parentNode
     db.put({
       _id,
       _rev,
-      pattern: e.target.querySelector('input').value,
-      code: e.target.querySelector('textarea').value
+      pattern: thisruleelem.querySelector('input').value,
+      code: thisruleelem.querySelector('textarea').value
     })
     .then(() => log.info(`rule ${_id.split(':')[1]} updated.`))
     .then(() => this.forceUpdate())
