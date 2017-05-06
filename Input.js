@@ -27,13 +27,19 @@ module.exports = createClass({
   render () {
     return (
       h('div#Input', [
-        h('form', {onSubmit: this.save}, [
-          h('div', this.state.preview),
-          h('input.input', {
-            onChange: e => { this.setState({input: e.target.value}) },
-            value: this.state.input
-          }),
-          h('button.button', {type: 'submit'}, 'Save')
+        h('.preview', this.state.preview),
+        h('form.add', {onSubmit: this.save}, [
+          h('.field.has-addons', [
+            h('.control.is-expanded', [
+              h('input.input', {
+                onChange: e => { this.setState({input: e.target.value}) },
+                value: this.state.input
+              })
+            ]),
+            h('.control', [
+              h('button.button.is-primary', {type: 'submit'}, 'Save')
+            ])
+          ])
         ]),
         h('div', this.state.facts.map(({line, _id, _rev, affected, errors}) =>
           h('.card.fact', {key: _id}, [

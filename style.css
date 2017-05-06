@@ -1,25 +1,32 @@
 html, body { min-height: 100vh; }
 
-body { background-color: #abed70; }
+body { background-color: #3273dc; }
 
 main {
   padding-top: 30px;
 }
 
 #Input {}
-  #Input .fact .card-content .column:last-child { text-align: right; }
-  #Input .fact .columns { margin-bottom: -.75rem; }
+  #Input .preview {}
+  #Input .add {}
+  #Input .fact { margin: 10px 12px 10px 0; }
+    #Input .fact .card-content { padding: 0.8rem 1.5rem; }
+    #Input .fact .card-content .column:last-child { text-align: right; }
+    #Input .fact .columns { margin-bottom: -.75rem; }
 
-  #Input .fact .affected,
-  #Input .fact .errors,
-  #Input .fact .card-header,
-  #Input .fact .card-footer { display: none; }
+    #Input .fact .affected,
+    #Input .fact .errors,
+    #Input .fact .card-header,
+    #Input .fact .card-footer { display: none; }
     #Input .fact:hover .affected,
     #Input .fact:hover .errors { display: block; }
     #Input .fact:hover .card-header,
     #Input .fact:hover .card-footer { display: flex; }
 
-#Facts {}
+#Rules {}
+  #Rules .create { background: #fafaef; }
+  #Rules .rule {}
+    #Rules .rule .card-header { background: #fafaef; }
 
 .container {
   padding: 20px;

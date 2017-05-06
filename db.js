@@ -45,6 +45,12 @@ function grabFacts () {
 function processAll () {
   store = {}
 
+  // cleanup errors and lines affected from rules
+  for (let i = 0; i < rules.length; i++) {
+    rules[i].errors = []
+    rules[i].facts = []
+  }
+
   for (let i = 0; i < facts.length; i++) {
     process(facts[i])
   }
@@ -85,9 +91,12 @@ function process (fact) {
   let {_id, line} = fact
   let timestamp = _id.split(':')[1]
   for (let p = 0; p < rules.length; p++) {
-    let {pattern, code} = rules[p]
-    let match = (new RegExp(pattern)).exec(line)
+    let rule = rules[p]
+    let match = (new RegExp(rule.pattern)).exec(line)
     if (match) {
+      // keep track of which lines have matched
+      rule.facts.push(fact)
+
       try {
         glua.runWithGlobals({
           timestamp,
@@ -102,10 +111,13 @@ function process (fact) {
           update_at: update_at.bind({affected: fact.affected, kind: 'update'})
           // the binding is necessary to keep track of `affected`.
 
-        }, code)
-      } catch (e) {
-        fact.errors.push({error: e, rule: rules[p]})
-        log.debug(e)
+        }, rule.code)
+      } catch (error) {
+        // keep track of where errors are happenning
+        fact.errors.push({error, rule})
+        rule.errors.push({error, fact})
+
+        log.debug(error)
       }
     }
   }

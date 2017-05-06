@@ -19,7 +19,9 @@ module.exports = createClass({
       rules: [],
 
       newpattern: '',
-      newcode: defaultluacode
+      newcode: defaultluacode,
+
+      opened: null
     }
   },
 
@@ -38,43 +40,7 @@ module.exports = createClass({
       rules = rules.filter(({_id}) => _id === this.props.rule)
     }
 
-    let renderRule = ({_id, _rev, pattern, code}) =>
-      h('.card.rule', {key: _id}, [
-        h('.card-header', [
-          h('span.card-header-title', `rule ${_id.split(':')[1]}`),
-          h('a.card-header-icon', { onClick: e => this.remove(_id, _rev, e) }, [
-            h('span.icon', [ h('i.fa.fa-trash') ])
-          ])
-        ]),
-        h('.card-content', [
-          h('form', {
-            onSubmit: e => this.update(_id, _rev, e)
-          }, [
-            h('p.control', [
-              h('input.input', {
-                defaultValue: pattern
-              })
-            ]),
-            h('div.control', [
-              h(CodeMirror, {
-                value: code,
-                ref: cmp => {
-                  if (!cmp) return
-                  let cm = cmp.getCodeMirror()
-                  cm.on('changes', () => { cm.save() })
-                },
-                options: {
-                  viewportMargin: Infinity,
-                  mode: 'lua'
-                }
-              })
-            ]),
-            h('button.button', {type: 'submit'}, 'Update')
-          ])
-        ])
-      ])
-
-    let createRule = h('.card', [
+    let createRule = h('.create.card', [
       h('.card-header', [
         h('span.card-header-title', 'Create new rule')
       ]),
@@ -106,10 +72,66 @@ module.exports = createClass({
       ])
     ])
 
+    let renderRule = ({_id, _rev, pattern, code, facts, errors}, opened) =>
+      h('.card.rule', {key: _id}, [
+        h('.card-header', [
+          h('span.card-header-title', `rule ${_id.split(':')[1]}`),
+          h('a.card-header-icon', { onClick: e => this.toggle(_id, e) }, [
+            h('span.icon', [ h(`i.fa.fa-angle-${opened ? 'up' : 'down'}`) ])
+          ])
+        ]),
+        h('.card-content', [
+          h('form', [
+            h('p.control', [
+              h('input.input', {
+                defaultValue: pattern
+              })
+            ]),
+            h('div.control', [
+              h(CodeMirror, {
+                value: code,
+                ref: cmp => {
+                  if (!cmp) return
+                  let cm = cmp.getCodeMirror()
+                  cm.on('changes', () => { cm.save() })
+                },
+                options: {
+                  viewportMargin: Infinity,
+                  mode: 'lua'
+                }
+              })
+            ])
+          ]),
+          opened && h('ul.facts', facts.map(fact =>
+            h('li', [ 'matched ', h('code', fact.line) ])
+          )) || null,
+          opened && h('ul.errors', errors.map(({error, fact}) =>
+            h('li', [
+              'error ', h('code', error.message),
+              ' on fact ', h('code', fact.line)
+            ])
+          )) || null
+        ]),
+        opened && h('.card-footer', [
+          h('.card-footer-item', [
+            h('a', { onClick: e => this.remove(_id, _rev, e) }, [
+              h('span.icon', [ h('i.fa.fa-trash') ]),
+              ' Delete'
+            ])
+          ]),
+          h('.card-footer-item', [
+            h('a', { onClick: e => this.update(_id, _rev, e) }, [
+              h('span.icon', [ h('i.fa.fa-check') ]),
+              ' Update'
+            ])
+          ])
+        ]) || null
+      ])
+
     return (
       h('div#Rules', [
         !this.props.rule ? createRule : null,
-        h('div', rules.map(renderRule))
+        h('div', rules.map(rule => renderRule(rule, this.state.opened === rule._id)))
       ])
     )
   },
@@ -152,5 +174,10 @@ module.exports = createClass({
     .then(() => log.info(`removed ${_id.split(':')[1]}.`))
     .then(() => this.forceUpdate())
     .catch(log.error)
+  },
+
+  toggle (_id, e) {
+    e.preventDefault()
+    this.setState({opened: this.state.opened === _id ? null : _id})
   }
 })
