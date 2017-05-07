@@ -40,7 +40,6 @@
     "react-codemirror": "^0.3.0",
     "react-dom": "^15.5.4",
     "react-hyperscript": "^3.0.0",
-    "react-json-view": "^1.7.2",
     "riek": "^1.0.7",
     "tiny-emitter": "^2.0.0",
     "xtend": "^4.0.1"
