@@ -5,7 +5,7 @@ const cuid = require('cuid')
 
 require('codemirror/mode/lua/lua')
 
-const {db, onStateChange} = require('./db')
+const {onStateChange} = require('./db')
 const log = require('./log')
 
 const defaultluacode = `-- lua script here.
@@ -16,6 +16,8 @@ module.exports = createClass({
   displayName: 'Rules',
   getInitialState () {
     return {
+      db: null,
+
       rules: [],
 
       newpattern: '',
@@ -26,7 +28,7 @@ module.exports = createClass({
   },
 
   componentDidMount () {
-    this.cancel = onStateChange(({rules}) => this.setState({rules}))
+    this.cancel = onStateChange(({rules, db}) => this.setState({rules, db}))
   },
 
   componentWillUnmount () {
@@ -138,7 +140,7 @@ module.exports = createClass({
   create (e) {
     e.preventDefault()
     let cid = cuid.slug()
-    db.put({
+    this.state.db.put({
       _id: `rule:${cid}`,
       pattern: this.state.newpattern,
       code: this.state.newcode
@@ -157,7 +159,7 @@ module.exports = createClass({
   update (_id, _rev, e) {
     e.preventDefault()
     let thisruleelem = e.target.parentNode.parentNode.parentNode
-    db.put({
+    this.state.db.put({
       _id,
       _rev,
       pattern: thisruleelem.querySelector('input').value,
@@ -170,7 +172,7 @@ module.exports = createClass({
 
   remove (_id, _rev, e) {
     e.preventDefault()
-    db.remove(_id, _rev)
+    this.state.db.remove(_id, _rev)
     .then(() => log.info(`removed ${_id.split(':')[1]}.`))
     .then(() => this.forceUpdate())
     .catch(log.error)

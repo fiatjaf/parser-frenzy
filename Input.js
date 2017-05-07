@@ -1,7 +1,7 @@
 const createClass = require('create-react-class')
 const h = require('react-hyperscript')
 
-const {db, onStateChange} = require('./db')
+const {onStateChange} = require('./db')
 const log = require('./log')
 const dateFormat = require('./helpers/date').asLongAsNeeded
 
@@ -9,6 +9,8 @@ module.exports = createClass({
   displayName: 'Input',
   getInitialState () {
     return {
+      db: null,
+
       facts: [],
 
       input: '',
@@ -17,7 +19,7 @@ module.exports = createClass({
   },
 
   componentDidMount () {
-    this.cancel = onStateChange(({facts}) => this.setState({facts}))
+    this.cancel = onStateChange(({facts, db}) => this.setState({facts, db}))
   },
 
   componentWillUnmount () {
@@ -80,7 +82,7 @@ module.exports = createClass({
 
   save (e) {
     e.preventDefault()
-    db.put({
+    this.state.db.put({
       _id: `f:${(new Date).getTime()}`,
       line: this.state.input
     })
@@ -94,7 +96,7 @@ module.exports = createClass({
 
   remove (_id, _rev, e) {
     e.preventDefault()
-    db.remove(_id, _rev)
+    this.state.db.remove(_id, _rev)
     .then(() => log.info(`removed ${_id}.`))
     .then(() => this.forceUpdate())
     .catch(log.error)

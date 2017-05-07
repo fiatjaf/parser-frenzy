@@ -5,6 +5,9 @@ const page = require('page')
 const Input = require('./Input')
 const Rules = require('./Rules')
 const Browse = require('./Browse')
+const Preferences = require('./Preferences')
+
+const {onStateChange} = require('./db')
 
 module.exports = createClass({
   displayName: 'Main',
@@ -13,11 +16,14 @@ module.exports = createClass({
       route: {
         component: () => h('div'),
         props: {}
-      }
+      },
+      settings: null
     }
   },
 
   componentDidMount () {
+    this.cancel = onStateChange(({settings}) => this.setState({settings}))
+
     page('/', '/input')
     page('/input', () => this.setState({route: {component: Input}}))
     page('/rules', () => this.setState({route: {component: Rules}}))
@@ -42,8 +48,12 @@ module.exports = createClass({
         }
       })
     )
-
+    page('/preferences', () => this.setState({route: {component: Preferences}}))
     page({hashbang: true})
+  },
+
+  componentWillUnmount () {
+    this.cancel()
   },
 
   render () {
@@ -51,7 +61,8 @@ module.exports = createClass({
       h('div', [
         h('nav.nav', [
           h('.nav-left', [
-            h('a.nav-item', 'parser-frenzy')
+            h('a.nav-item', {href: '/preferences/'}, h('span.icon', [ h('i.fa.fa-bars') ])),
+            h('a.nav-item', this.state.settings ? this.state.settings.name : 'parser-frenzy')
           ]),
           h('.nav-center', [
             h('a.nav-item', {href: '/input/'}, 'input'),
