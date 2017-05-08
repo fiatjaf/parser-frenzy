@@ -55,7 +55,7 @@ module.exports = createClass({
                   h('li', [
                     h('code', kind), ' at ',
                     h('a', {href: '/browse/' + at.join('/')}, at.join('.')),
-                    ' with value ', h('code', val), '.'
+                    ' with value ', h('code', JSON.stringify(val)), '.'
                   ])
                 ) || [ h('center', "~ this line hasn't affected the store ~") ]
               ),
@@ -83,7 +83,7 @@ module.exports = createClass({
   save (e) {
     e.preventDefault()
     this.state.db.put({
-      _id: `f:${(new Date).getTime()}`,
+      _id: `f:${parseInt((new Date).getTime() / 1000)}`,
       line: this.state.input
     })
     .then(() => {

@@ -2,6 +2,7 @@ const createClass = require('create-react-class')
 const h = require('react-hyperscript')
 const CodeMirror = require('react-codemirror')
 const cuid = require('cuid')
+const glua = require('glua')
 
 require('codemirror/mode/lua/lua')
 
@@ -14,6 +15,124 @@ const defaultluacode = `-- lua script here.
 
 module.exports = createClass({
   displayName: 'Rules',
+  getInitialState () {
+    return {
+      selected: ListOfRules
+    }
+  },
+
+  render () {
+    return (
+      h('#Rules', [
+        h('.tabs.is-centered', [
+          h('ul', [
+            h('li', {className: this.state.selected === ListOfRules ? 'is-active' : null}, [
+              h('a', {onClick: e => this.select(ListOfRules, e) }, 'Your Rules')
+            ]),
+            h('li', {className: this.state.selected === Imports ? 'is-active' : null}, [
+              h('a', {onClick: e => this.select(Imports, e) }, 'Lua Libraries')
+            ]),
+            h('li', {className: this.state.selected === REPL ? 'is-active' : null}, [
+              h('a', {onClick: e => this.select(REPL, e) }, 'Lua Playground')
+            ])
+          ])
+        ]),
+        h(this.state.selected, this.props)
+      ])
+    )
+  },
+
+  select (tab, e) {
+    e.preventDefault()
+    this.setState({selected: tab})
+  }
+})
+
+const REPL = createClass({
+  displayName: 'REPL',
+  getInitialState () {
+    return {
+      code: `-- just a place to test lua code
+print('something')
+      `,
+      output: ''
+    }
+  },
+
+  componentDidMount () {
+    this.run()
+  },
+
+  render () {
+    return (
+      h('div', [
+        h('form', {onSubmit: this.run}, [
+          h('div.control', [
+            h(CodeMirror, {
+              value: this.state.code,
+              onChange: code => { this.setState({code}) },
+              options: {
+                mode: 'lua'
+              }
+            })
+          ]),
+          h('button.button.is-primary', {onClick: this.run}, 'Run')
+        ]),
+        h('pre', [
+          h('code', this.state.output)
+        ])
+      ])
+    )
+  },
+
+  run (e) {
+    if (e) e.preventDefault()
+
+    try {
+      var output = []
+      glua.runWithGlobals({
+        print: function () {
+          let o = [].join.call(arguments, '\t')
+          output.push(o)
+        }
+      }, this.state.code)
+      this.setState({output: output.join('\n')})
+    } catch (e) {
+      this.setState({output: e.message})
+    }
+  }
+})
+
+const Imports = createClass({
+  displayName: 'Imports',
+  getInitialState () {
+    return {
+      db: null,
+      imports: [],
+
+      newlibrary: '',
+
+      opened: null
+    }
+  },
+
+  componentDidMount () {
+    this.cancel = onStateChange(({imports, db}) => this.setState({imports, db}))
+  },
+
+  componentWillUnmount () {
+    this.cancel()
+  },
+
+  render () {
+    return (
+      h('div')
+    )
+  }
+})
+
+const ListOfRules = createClass({
+  displayName: 'ListOfRules',
   getInitialState () {
     return {
       db: null,
@@ -115,22 +234,16 @@ module.exports = createClass({
         ]),
         opened && h('.card-footer', [
           h('.card-footer-item', [
-            h('a', { onClick: e => this.remove(_id, _rev, e) }, [
-              h('span.icon', [ h('i.fa.fa-trash') ]),
-              ' Delete'
-            ])
+            h('a', { onClick: e => this.remove(_id, _rev, e) }, 'Delete')
           ]),
           h('.card-footer-item', [
-            h('a', { onClick: e => this.update(_id, _rev, e) }, [
-              h('span.icon', [ h('i.fa.fa-check') ]),
-              ' Update'
-            ])
+            h('a', { onClick: e => this.update(_id, _rev, e) }, 'Save')
           ])
         ]) || null
       ])
 
     return (
-      h('div#Rules', [
+      h('div', [
         !this.props.rule ? createRule : null,
         h('div', rules.map(rule => renderRule(rule, this.state.opened === rule._id)))
       ])
