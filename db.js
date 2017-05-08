@@ -2,6 +2,7 @@ const PouchDB = require('pouchdb-browser')
 window.PouchDB = PouchDB
 const Emitter = require('tiny-emitter')
 const cuid = require('cuid')
+const XRegExp = window.XRegExp
 
 const log = require('./log')
 const process = require('./process')
@@ -71,7 +72,8 @@ function grabRules () {
     .then(res => {
       for (let i = 0; i < res.rows.length; i++) {
         let {_id, _rev, pattern, code} = res.rows[i].doc
-        rules.unshift({_id, _rev, pattern, code})
+        let regex = XRegExp(pattern)
+        rules.unshift({_id, _rev, pattern, code, regex})
       }
     })
 }
