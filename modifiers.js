@@ -35,17 +35,17 @@ function update_at (store, path, fn) {
 }
 function sum_at (store, path, val) {
   this.val = val
-  update_at.call(this, path, cur => (typeof cur === 'number' ? cur : 0) + val)
+  update_at.call(this, store, path, cur => (typeof cur === 'number' ? cur : 0) + val)
 }
-function set_at (store, path, val) { update_at.call(this, path, () => val) }
+function set_at (store, path, val) { update_at.call(this, store, path, () => val) }
 function merge_at (store, path, val) {
-  update_at.call(this, path, cur =>
+  update_at.call(this, store, path, cur =>
     deepmerge(cur, val, {arrayMerge: (d, s) => s.concat(d)})
   )
 }
 function push_to (store, path, elem) {
   this.val = elem
-  update_at.call(this, path, cur => {
+  update_at.call(this, store, path, cur => {
     if (!Array.isArray(cur)) {
       cur = []
     }
@@ -55,7 +55,7 @@ function push_to (store, path, elem) {
 }
 function remove_from (store, path, elem) {
   this.val = elem
-  update_at.call(this, path, cur => {
+  update_at.call(this, store, path, cur => {
     if (!Array.isArray(cur)) {
       return []
     }

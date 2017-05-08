@@ -12,7 +12,6 @@ function process (fact, store, rules) {
   fact.errors = []
 
   let {_id, line} = fact
-  let timestamp = _id.split(':')[1]
   for (let p = 0; p < rules.length; p++) {
     let rule = rules[p]
     let match = XRegExp.exec(line, rule.regex)
@@ -22,7 +21,7 @@ function process (fact, store, rules) {
 
       try {
         glua.runWithGlobals({
-          timestamp,
+          timestamp: parseInt(_id.split(':')[1]),
           line,
           match,
 
