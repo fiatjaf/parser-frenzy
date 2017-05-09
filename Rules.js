@@ -73,10 +73,10 @@ print('something')
         h('.columns', [
           h('.column.is-half', [
             h('form', {onSubmit: this.run}, [
-              h('div.control', [
+              h('.control', [
                 h(CodeMirror, {
                   value: this.state.code,
-                  onChange: code => { this.setState({code}) },
+                  onChange: code => this.setState({code}),
                   options: {
                     viewportMargin: Infinity,
                     mode: 'lua'
@@ -162,14 +162,14 @@ const Modules = createClass({
           h('p.control', [
             h('input.input', {
               value: this.state.newname,
-              onChange: e => { this.setState({newname: e.target.value}) },
+              onChange: e => this.setState({newname: e.target.value}),
               title: 'a name for this module'
             })
           ]),
           h('div.control', [
             h(CodeMirror, {
               value: this.state.newcode,
-              onChange: newcode => { this.setState({newcode}) },
+              onChange: newcode => this.setState({newcode}),
               title: 'code for the lua module that you\'ll be able to require from rules',
               options: {
                 viewportMargin: Infinity,
@@ -343,7 +343,7 @@ const ListOfRules = createClass({
           h('p.control', [
             h('input.input', {
               value: this.state.newpattern,
-              onChange: e => { this.setState({newpattern: e.target.value}) },
+              onChange: e => this.setState({newpattern: e.target.value}),
               title: 'a valid Javascript regex pattern',
               placeholder: `\\w{2,5}: +\\d\\d(,\\d\\d)?`
             })
@@ -351,7 +351,7 @@ const ListOfRules = createClass({
           h('div.control', [
             h(CodeMirror, {
               value: this.state.newcode,
-              onChange: newcode => { this.setState({newcode}) },
+              onChange: newcode => this.setState({newcode}),
               title: 'lua code that will change the store in response to a line that matches',
               options: {
                 viewportMargin: Infinity,
