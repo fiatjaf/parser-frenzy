@@ -52,7 +52,7 @@ const REPL = createClass({
   displayName: 'REPL',
   getInitialState () {
     return {
-      code: `-- just a place to test lua code
+      code: `-- test some lua code
 print('something')
       `,
       output: ''
@@ -65,21 +65,30 @@ print('something')
 
   render () {
     return (
-      h('div', [
-        h('form', {onSubmit: this.run}, [
-          h('div.control', [
-            h(CodeMirror, {
-              value: this.state.code,
-              onChange: code => { this.setState({code}) },
-              options: {
-                mode: 'lua'
-              }
-            })
+      h('#REPL', [
+        h('.columns', [
+          h('.column.is-half', [
+            h('form', {onSubmit: this.run}, [
+              h('div.control', [
+                h(CodeMirror, {
+                  value: this.state.code,
+                  onChange: code => { this.setState({code}) },
+                  options: {
+                    viewportMargin: Infinity,
+                    mode: 'lua'
+                  }
+                })
+              ]),
+              h('.control', [
+                h('button.button.is-info', {onClick: this.run}, 'Run')
+              ])
+            ])
           ]),
-          h('button.button.is-primary', {onClick: this.run}, 'Run')
-        ]),
-        h('pre', [
-          h('code', this.state.output)
+          h('.column.is-half', [
+            h('pre', [
+              h('code', this.state.output)
+            ])
+          ])
         ])
       ])
     )

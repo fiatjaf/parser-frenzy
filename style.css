@@ -28,6 +28,8 @@ main {
   #Rules .rule {}
     #Rules .rule .card-header { background: #fafaef; }
 
+  #REPL .CodeMirror { height: 300px !important; }
+
 #Browse {}
   #Browse .react-json-view { padding: 18px; }
 
