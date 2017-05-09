@@ -147,6 +147,7 @@ const ListOfRules = createClass({
       db: null,
 
       rules: [],
+      tempValues: {},
 
       newpattern: '',
       newcode: defaultluacode,
@@ -197,47 +198,62 @@ const ListOfRules = createClass({
               }
             })
           ]),
-          h('button.button', 'Create')
+          h('div.control', [
+            h('button.button', 'Create')
+          ])
         ])
       ])
     ])
 
-    let renderRule = ({_id, _rev, pattern, code, facts, errors}, opened) =>
-      h('.card.rule', {key: _id}, [
+    let renderRule = ({_id, _rev, pattern, code, facts, errors}, temp, opened, editing) =>
+      h(`.card.rule.${opened ? 'open' : 'closed'}.${editing ? 'editing' : 'not-editing'}`, {key: _id}, [
         h('.card-header', [
-          h('span.card-header-title', `rule ${_id.split(':')[1]}`),
-          h('a.card-header-icon', { onClick: e => this.toggle(_id, e) }, [
-            h('span.icon', [ h(`i.fa.fa-angle-${opened ? 'up' : 'down'}`) ])
+          h('span.card-header-title', [
+            `rule ${_id.split(':')[1]} `,
+            !opened &&
+              facts.length > 0 &&
+                h('span.tag.is-success', {title: `${facts.length} matched.`}, facts.length) || null,
+            !opened &&
+              errors.length > 0 &&
+                h('span.tag.is-danger', {title: `${errors.length} errored.`}, errors.length) || null
+          ]),
+          h('a.card-header-icon', { onClick: e => this.toggleOpen(_id, e) }, [
+            h('span.icon', [ h(`i.fa.fa-angle-${opened ? 'down' : 'up'}`) ])
           ])
         ]),
         h('.card-content', [
           h('p.control', [
             h('input.input', {
-              defaultValue: pattern
+              value: editing ? temp.pattern : pattern,
+              onChange: e => this.changed('pattern', _id, e.target.value),
+              disabled: !editing
             })
           ]),
           h('div.control', [
             h(CodeMirror, {
-              value: code,
-              ref: cmp => {
-                if (!cmp) return
-                let cm = cmp.getCodeMirror()
-                cm.on('changes', () => { cm.save() })
-              },
+              value: editing ? temp.code : code,
+              onChange: val => this.changed('code', _id, val),
               options: {
-                viewportMargin: Infinity,
+                viewportMargin: editing ? Infinity : 7,
                 mode: 'lua',
-                readOnly: !opened
+                readOnly: editing ? false : 'nocursor'
               }
             })
           ]),
-          opened && h('ul.facts', facts.map(fact =>
-            h('li', [ 'matched ', h('code', fact.line) ])
+          opened && h('.facts', facts.map(fact =>
+            h('p', [
+              h('span.tag.is-success', 'matched'),
+              ' ',
+              h('code', fact.line)
+            ])
           )) || null,
-          opened && h('ul.errors', errors.map(({error, fact}) =>
-            h('li', [
-              'error ', h('code', error.message),
-              ' on fact ', h('code', fact.line)
+          opened && h('.errors', errors.map(({error, fact}) =>
+            h('p', [
+              h('span.tag.is-danger', 'error'),
+              ' ',
+              h('code', error.message),
+              ' at ',
+              h('code', fact.line)
             ])
           )) || null
         ]),
@@ -246,15 +262,24 @@ const ListOfRules = createClass({
             h('a', { onClick: e => this.remove(_id, _rev, e) }, 'Delete')
           ]),
           h('.card-footer-item', [
-            h('a', { onClick: e => this.update(_id, _rev, e) }, 'Save')
+            editing
+            ? h('a', { onClick: e => this.saveEdits(_id, _rev, e) }, 'Save')
+            : h('a', { onClick: e => this.startEditing(_id, code, pattern, e) }, 'Edit')
           ])
         ]) || null
       ])
 
     return (
-      h('div', [
+      h('#ListOfRules', [
         !this.props.rule ? createRule : null,
-        h('div', rules.map(rule => renderRule(rule, this.state.opened === rule._id)))
+        h('div', rules.map(rule =>
+          renderRule(
+            rule,
+            this.state.tempValues[rule._id],
+            this.state.opened === rule._id,
+            this.state.editing === rule._id
+          )
+        ))
       ])
     )
   },
@@ -278,17 +303,30 @@ const ListOfRules = createClass({
     .catch(log.error)
   },
 
-  update (_id, _rev, e) {
+  changed (what, _id, val) {
+    this.setState(st => {
+      st.tempValues[_id][what] = val
+      return st
+    })
+  },
+
+  saveEdits (_id, _rev, e) {
     e.preventDefault()
-    let thisruleelem = e.target.parentNode.parentNode.parentNode
+    let temp = this.state.tempValues[_id]
     this.state.db.put({
       _id,
       _rev,
-      pattern: thisruleelem.querySelector('input').value,
-      code: thisruleelem.querySelector('textarea').value
+      pattern: temp.pattern,
+      code: temp.code
     })
-    .then(() => log.info(`rule ${_id.split(':')[1]} updated.`))
-    .then(() => this.forceUpdate())
+    .then(() => {
+      log.info(`rule ${_id.split(':')[1]} updated.`)
+      this.setState(st => {
+        delete st.tempValues[_id]
+        st.editing = null
+        return st
+      })
+    })
     .catch(log.error)
   },
 
@@ -300,8 +338,22 @@ const ListOfRules = createClass({
     .catch(log.error)
   },
 
-  toggle (_id, e) {
+  toggleOpen (_id, e) {
     e.preventDefault()
-    this.setState({opened: this.state.opened === _id ? null : _id})
+    if (this.state.opened === _id) {
+      this.setState({editing: null, opened: null})
+    } else {
+      this.setState({editing: null, opened: _id})
+    }
+  },
+
+  startEditing (_id, code, pattern, e) {
+    e.preventDefault()
+    this.setState(st => {
+      st.opened = _id
+      st.editing = _id
+      st.tempValues[_id] = st.tempValues[_id] || {code, pattern}
+      return st
+    })
   }
 })
