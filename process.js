@@ -6,10 +6,16 @@ const {merge_at, set_at, push_to, remove_from, sum_at} = require('./modifiers')
 
 module.exports = process
 
-function process (fact, store, rules) {
+function process (fact, store, rules, modules) {
   // cleanup affected paths and errors
   fact.affected = []
   fact.errors = []
+
+  var moduleMap = {}
+  for (let i = 0; i < modules.length; i++) {
+    let mod = modules[i]
+    moduleMap[mod._id.split(':')[1]] = mod.code
+  }
 
   let {_id, line} = fact
   for (let p = 0; p < rules.length; p++) {
@@ -20,7 +26,7 @@ function process (fact, store, rules) {
       rule.facts.push(fact)
 
       try {
-        glua.runWithGlobals({
+        glua.runWithModules(moduleMap, {
           timestamp: parseInt(_id.split(':')[1]),
           line,
           match,

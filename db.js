@@ -42,7 +42,7 @@ function loadStore (selectedStoreSettings) {
             if (change.doc._rev.split('-')[0] === '1') {
               // process a new fact
               facts.unshift(change.doc)
-              process(change.doc, store, rules)
+              process(change.doc, store, rules, modules)
               emitter.emit('!')
             } else {
               // fact changed or deleted, need to start over
@@ -52,7 +52,7 @@ function loadStore (selectedStoreSettings) {
                   emitter.emit('!')
                 })
             }
-          } else if (change.id.slice(0, 5) === 'rule:') {
+          } else if (change.id.slice(0, 5) === 'rule:' || change.id.slice(0, 4) === 'mod:') {
             // rules have changed, need to start over
             grabRules()
               .then(processAll)
@@ -66,16 +66,26 @@ function loadStore (selectedStoreSettings) {
 }
 
 function grabRules () {
+  modules = []
   rules = []
 
-  return db.allDocs({startkey: 'rule:', endkey: 'rule:~', include_docs: true})
+  return Promise.all([
+    db.allDocs({startkey: 'rule:', endkey: 'rule:~', include_docs: true})
     .then(res => {
       for (let i = 0; i < res.rows.length; i++) {
         let {_id, _rev, pattern, code} = res.rows[i].doc
         let regex = XRegExp(pattern)
         rules.unshift({_id, _rev, pattern, code, regex})
       }
+    }),
+    db.allDocs({startkey: 'mod:', endkey: 'mod:~', include_docs: true})
+    .then(res => {
+      for (let i = 0; i < res.rows.length; i++) {
+        let {_id, _rev, code} = res.rows[i].doc
+        modules.push({_id, _rev, code})
+      }
     })
+  ])
 }
 
 function grabFacts () {
@@ -99,16 +109,16 @@ function processAll () {
   }
 
   for (let i = 0; i < facts.length; i++) {
-    process(facts[i], store, rules)
+    process(facts[i], store, rules, modules)
   }
 }
 
 module.exports.onStateChange = function (cb) {
-  cb({db, settings, store, facts, rules}) // initial call.
+  cb({db, settings, store, modules, facts, rules}) // initial call.
 
   // listen:
   let fn = () =>
-    cb({db, settings, store, facts, rules})
+    cb({db, settings, store, modules, facts, rules})
   emitter.on('!', fn)
 
   // return a 'cancel' function
@@ -151,6 +161,7 @@ function findStore (id) {
 var settings
 var db
 var store = {}
+var modules = []
 var rules = []
 var facts = []
 
