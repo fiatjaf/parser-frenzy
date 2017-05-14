@@ -6,7 +6,7 @@ const {merge_at, set_at, push_to, remove_from, sum_at} = require('./modifiers')
 
 module.exports = process
 
-function process (fact, store, rules, modules) {
+function process (fact, {store, rules, modules}) {
   // cleanup affected paths and errors
   fact.affected = []
   fact.errors = []

@@ -2,6 +2,7 @@ const PouchDB = require('pouchdb-browser')
 const Emitter = require('tiny-emitter')
 const cuid = require('cuid')
 const XRegExp = window.XRegExp
+const debounce = require('debounce')
 
 const log = require('./log')
 const process = require('./process')
@@ -23,32 +24,39 @@ module.exports.loadStore = loadStore
 function loadStore (selectedStoreSettings) {
   cancel.cancel()
 
-  settings = selectedStoreSettings
-  db = new PouchDB(settings.id)
-  emitter.emit('!')
+  state.settings = selectedStoreSettings
+  state.db = new PouchDB(state.settings.id)
+  emitter.emit('db!')
 
   grabRules()
     .then(grabFacts)
     .then(() => {
       processAll()
-      emitter.emit('!')
+      emitter.emit('rules!')
+      emitter.emit('facts!')
+      emitter.emit('modules!')
+      emitter.emit('store!')
     })
     .catch(log.error)
     .then(() => {
-      cancel = db.changes({live: true, include_docs: true, since: 'now'})
+      cancel = state.db.changes({live: true, include_docs: true, since: 'now'})
         .on('change', change => {
           if (change.id.slice(0, 2) === 'f:') {
             if (change.doc._rev.split('-')[0] === '1') {
               // process a new fact
-              facts.unshift(change.doc)
-              process(change.doc, store, rules, modules)
-              emitter.emit('!')
+              state.facts.unshift(change.doc)
+              process(change.doc, state)
+              emitter.emit('facts!')
+              emitter.emit('store!')
             } else {
               // fact changed or deleted, need to start over
               grabFacts()
                 .then(processAll)
                 .then(() => {
-                  emitter.emit('!')
+                  emitter.emit('rules!')
+                  emitter.emit('facts!')
+                  emitter.emit('modules!')
+                  emitter.emit('store!')
                 })
             }
           } else if (change.id.slice(0, 5) === 'rule:' || change.id.slice(0, 4) === 'mod:') {
@@ -56,7 +64,9 @@ function loadStore (selectedStoreSettings) {
             grabRules()
               .then(processAll)
               .then(() => {
-                emitter.emit('!')
+                emitter.emit('rules!')
+                emitter.emit('modules!')
+                emitter.emit('store!')
               })
           }
         })
@@ -65,63 +75,80 @@ function loadStore (selectedStoreSettings) {
 }
 
 function grabRules () {
-  modules = []
-  rules = []
+  state.modules = []
+  state.rules = []
 
   return Promise.all([
-    db.allDocs({startkey: 'rule:', endkey: 'rule:~', include_docs: true})
+    state.db.allDocs({startkey: 'rule:', endkey: 'rule:~', include_docs: true})
     .then(res => {
       for (let i = 0; i < res.rows.length; i++) {
         let {_id, _rev, pattern, code} = res.rows[i].doc
         let regex = XRegExp(pattern)
-        rules.unshift({_id, _rev, pattern, code, regex})
+        state.rules.unshift({_id, _rev, pattern, code, regex})
       }
     }),
-    db.allDocs({startkey: 'mod:', endkey: 'mod:~', include_docs: true})
+    state.db.allDocs({startkey: 'mod:', endkey: 'mod:~', include_docs: true})
     .then(res => {
       for (let i = 0; i < res.rows.length; i++) {
         let {_id, _rev, code} = res.rows[i].doc
-        modules.push({_id, _rev, code})
+        state.modules.push({_id, _rev, code})
       }
     })
   ])
 }
 
 function grabFacts () {
-  facts = []
+  state.facts = []
 
-  return db.allDocs({startkey: 'f:', endkey: 'f:~', include_docs: true})
+  return state.db.allDocs({startkey: 'f:', endkey: 'f:~', include_docs: true})
     .then(res => {
       for (let i = 0; i < res.rows.length; i++) {
-        facts.unshift(res.rows[i].doc)
+        state.facts.unshift(res.rows[i].doc)
       }
     })
 }
 
 function processAll () {
-  store = {}
+  state.store = {}
 
   // cleanup errors and lines affected from rules
-  for (let i = 0; i < rules.length; i++) {
-    rules[i].errors = []
-    rules[i].facts = []
+  for (let i = 0; i < state.rules.length; i++) {
+    state.rules[i].errors = []
+    state.rules[i].facts = []
   }
 
-  for (let i = 0; i < facts.length; i++) {
-    process(facts[i], store, rules, modules)
+  for (let i = 0; i < state.facts.length; i++) {
+    process(state.facts[i], state)
   }
 }
 
-module.exports.onStateChange = function (cb) {
-  cb({db, settings, store, modules, facts, rules}) // initial call.
+module.exports.onStateChange = function (cb, selected = [
+  'db',
+  'settings',
+  'store',
+  'modules',
+  'facts',
+  'rules'
+]) {
+  let dispatch = () => cb(state)
+  let ddispatch = debounce(dispatch, 1) // on sequential emits, group them
 
-  // listen:
-  let fn = () =>
-    cb({db, settings, store, modules, facts, rules})
-  emitter.on('!', fn)
+  for (let i = 0; i < selected.length; i++) {
+    let what = selected[i]
+    emitter.on(what + '!', ddispatch)
+  }
+  emitter.on('!', dispatch)
+
+  dispatch() // initial call.
 
   // return a 'cancel' function
-  return () => emitter.off('!', fn)
+  return () => {
+    for (let i = 0; i < selected.length; i++) {
+      let what = selected[i]
+      emitter.off(what + '!', dispatch)
+    }
+    emitter.off('!', dispatch)
+  }
 }
 
 module.exports.deleteStore = function (id) {
@@ -157,12 +184,14 @@ function findStore (id) {
 
 // ---- ---- ----
 // init
-var settings
-var db
-var store = {}
-var modules = []
-var rules = []
-var facts = []
+var state = {
+  settings: null,
+  db: null,
+  store: {},
+  modules: [],
+  rules: [],
+  facts: []
+}
 
 var stores = JSON.parse(localStorage.getItem('stores') || '[]')
 var using = localStorage.getItem('using')

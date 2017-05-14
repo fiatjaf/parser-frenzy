@@ -90,7 +90,6 @@ module.exports = createClass({
       log.info('added.')
       this.setState({input: '', preview: null})
     })
-    .then(() => this.forceUpdate())
     .catch(log.error)
   },
 
