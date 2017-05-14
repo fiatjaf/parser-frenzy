@@ -1,5 +1,4 @@
 const PouchDB = require('pouchdb-browser')
-window.PouchDB = PouchDB
 const Emitter = require('tiny-emitter')
 const cuid = require('cuid')
 const XRegExp = window.XRegExp

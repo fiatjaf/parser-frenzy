@@ -6,6 +6,14 @@ main {
   padding-top: 30px;
 }
 
+#Preferences {}
+  #Preferences .new-store {}
+    #Preferences .new-store .card-image {
+      text-align: center;
+      padding: 38px 0;
+    }
+    #Preferences .new-store .fa { font-size: 102px; }
+
 #Input {}
   #Input .preview {}
   #Input .add {}
@@ -24,15 +32,14 @@ main {
   #REPL .CodeMirror { height: 300px !important; }
 
 #Browse {}
-  #Browse .react-json-view { padding: 18px; }
 
-#Preferences {}
-  #Preferences .new-store {}
-    #Preferences .new-store .card-image {
-      text-align: center;
-      padding: 38px 0;
-    }
-    #Preferences .new-store .fa { font-size: 102px; }
+#Sync {}
+  #WebRTC textarea, #WebRTC pre { width: 100%; height: 200px; }
+  #WebRTC pre { overflow-y: scroll; }
+  #WebRTC pre code {
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
 
 .title { color: inherit; }
 .subtitle { color: inherit; }

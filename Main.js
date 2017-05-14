@@ -2,10 +2,11 @@ const createClass = require('create-react-class')
 const h = require('react-hyperscript')
 const page = require('page')
 
+const Preferences = require('./Preferences')
 const Input = require('./Input')
 const Rules = require('./Rules')
 const Browse = require('./Browse')
-const Preferences = require('./Preferences')
+const Sync = require('./Sync')
 
 const {onStateChange} = require('./db')
 
@@ -25,6 +26,7 @@ module.exports = createClass({
     this.cancel = onStateChange(({settings}) => this.setState({settings}))
 
     page('/', '/input')
+    page('/preferences', () => this.setState({route: {component: Preferences}}))
     page('/input', () => this.setState({route: {component: Input}}))
     page('/rules', () => this.setState({route: {component: Rules}}))
     page('/rules/:ruleId', ctx =>
@@ -48,7 +50,7 @@ module.exports = createClass({
         }
       })
     )
-    page('/preferences', () => this.setState({route: {component: Preferences}}))
+    page('/sync', () => this.setState({route: {component: Sync}}))
     page({hashbang: true})
   },
 
@@ -67,7 +69,8 @@ module.exports = createClass({
           h('.nav-center', [
             h('a.nav-item', {href: '/input/'}, 'input'),
             h('a.nav-item', {href: '/rules/'}, 'rules'),
-            h('a.nav-item', {href: '/browse/'}, 'browse')
+            h('a.nav-item', {href: '/browse/'}, 'browse'),
+            h('a.nav-item', {href: '/sync/'}, 'sync')
           ])
         ]),
         h('main.columns', [

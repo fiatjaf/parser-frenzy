@@ -37,6 +37,7 @@
     "glua": "^0.4.5",
     "jq-web": "0.0.1",
     "page": "^1.7.1",
+    "pouch-replicate-webrtc": "github:fiatjaf/pouch-replicate-webrtc",
     "pouchdb-browser": "^6.2.0",
     "react": "^15.5.4",
     "react-codemirror": "^0.3.0",
