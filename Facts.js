@@ -1,5 +1,6 @@
 const createClass = require('create-react-class')
 const h = require('react-hyperscript')
+const debounce = require('debounce')
 
 const {onStateChange} = require('./db')
 const log = require('./log')
@@ -24,7 +25,7 @@ const Input = createClass({
   },
 
   componentDidMount () {
-    this.cancel = onStateChange(({facts, db}) => this.setState({facts, db}))
+    this.cancel = onStateChange(({facts, db}) => this.setState({facts, db}), ['facts', 'db'])
   },
 
   componentWillUnmount () {
@@ -148,12 +149,12 @@ const Input = createClass({
 
   open (_id, e) {
     e.preventDefault()
-    this.setState({opened: _id})
+    this.setState({opened: _id, editing: null})
   },
 
   close (e) {
     e.preventDefault()
-    this.setState({opened: null})
+    this.setState({opened: null, editing: null})
   },
 
   startEditing (_id, line, e) {
@@ -196,14 +197,18 @@ const Preload = createClass({
   displayName: 'Preload',
   getInitialState () {
     return {
+      checkpoints: [],
       db: null,
 
-      input: ''
+      typed: '',
+      parsed: null
     }
   },
 
   componentDidMount () {
-    this.cancel = onStateChange(({db}) => this.setState({db}))
+    this.cancel = onStateChange(({checkpoints, db}) => this.setState({checkpoints, db}), ['checkpoints', 'db'])
+
+    this.dhandleTyped = debounce(this.handleTyped, 500)
   },
 
   componentWillUnmount () {
@@ -213,9 +218,70 @@ const Preload = createClass({
   render () {
     return (
       h('#Preload', [
-        h('form')
+        h('form', [
+          h('.control', [
+            h('textarea.textarea', {
+              value: this.state.typed,
+              onChange: e => this.setState({typed: e.target.value}, () => this.dhandleTyped())
+            })
+          ]),
+          !this.state.typed && h('.control', [
+            h('input.input', {
+              type: 'file',
+              onChange: this.handleFile
+            })
+          ]) || null
+        ]),
+        this.state.parsed && h('div', [
+          h('p', 'File contents:'),
+          h('pre', [
+            h('code', JSON.stringify(this.state.parsed, null, 2))
+          ]),
+          h('button.button.is-primary', {
+            onClick: this.save
+          }, 'Save this as initial data')
+        ]) || null
       ])
     )
+  },
+
+  handleFile (e) {
+    let f = e.target.files[0]
+    if (!f) return
+
+    let reader = new window.FileReader()
+    reader.onload = e => {
+      var data
+      try {
+        data = JSON.parse(e.target.result)
+      } catch (e) {
+        log.error("Couldn't parse file as JSON.")
+      }
+
+      this.setState({parsed: data})
+    }
+
+    reader.readAsText(f)
+  },
+
+  handleTyped () {
+    var data
+    try {
+      data = JSON.parse(this.state.typed)
+    } catch (e) {}
+
+    this.setState({parsed: data})
+  },
+
+  save (e) {
+    e.preventDefault()
+
+    this.state.db.put({
+      _id: 'chk:0',
+      checkpoint: this.state.parsed
+    })
+    .then(() => log.info('saved.'))
+    .catch(log.error)
   }
 })
 

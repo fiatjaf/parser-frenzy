@@ -7,20 +7,16 @@ const debounce = require('debounce')
 const {onStateChange} = require('./db')
 const makeSubRouter = require('./helpers/sub-router')
 
-function filterStore (store) {
-  var cur = this.state.store
+function filterStore (store, path) {
+  var cur = store
 
-  for (let i = 0; i < this.props.path.length; i++) {
-    cur[this.props.path[i]] = cur[this.props.path[i]] || {}
-    cur = cur[this.props.path[i]]
+  for (let i = 0; i < path.length; i++) {
+    cur[path[i]] = cur[path[i]] || {}
+    cur = cur[path[i]]
   }
 
-  let rootName = this.props.path.length ? this.props.path.join('.') : ':root'
+  let rootName = path.length ? path.join('.') : ':root'
   return {current: cur, rootName}
-}
-
-module.exports.defaultProps = {
-  path: []
 }
 
 const Raw = createClass({
@@ -40,7 +36,7 @@ const Raw = createClass({
   },
 
   render () {
-    let {current} = filterStore(this.state.store)
+    let {current} = filterStore(this.state.store, this.props.path)
 
     return (
       h('#Raw', [
@@ -63,7 +59,7 @@ const JQ = createClass({
 
   componentDidMount () {
     this.cancel = onStateChange(({store}) => {
-      let {current} = filterStore(store)
+      let {current} = filterStore(store, this.props.path)
       this.setState({current})
     })
 
@@ -136,3 +132,7 @@ module.exports = makeSubRouter('Facts', [
   [JQ, 'jq', 'Explore your data with jq'],
   [SQL, 'SQL', 'Run SQL queries on your data']
 ])
+
+module.exports.defaultProps = {
+  path: []
+}

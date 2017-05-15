@@ -28,10 +28,12 @@ function loadStore (selectedStoreSettings) {
   state.db = new PouchDB(state.settings.id)
   emitter.emit('db!')
 
-  grabRules()
+  grabCheckpoints()
+    .then(grabRules)
     .then(grabFacts)
     .then(() => {
       processAll()
+      emitter.emit('checkpoints!')
       emitter.emit('rules!')
       emitter.emit('facts!')
       emitter.emit('modules!')
@@ -43,7 +45,7 @@ function loadStore (selectedStoreSettings) {
         .on('change', change => {
           if (change.id.slice(0, 2) === 'f:') {
             if (change.doc._rev.split('-')[0] === '1') {
-              // process a new fact
+              // a new fact, just process it
               state.facts.unshift(change.doc)
               process(change.doc, state)
               emitter.emit('facts!')
@@ -66,6 +68,14 @@ function loadStore (selectedStoreSettings) {
               .then(() => {
                 emitter.emit('rules!')
                 emitter.emit('modules!')
+                emitter.emit('store!')
+              })
+          } else if (change.id.slice(0, 4) === 'chk:') {
+            // checkpoints changed, start over
+            grabCheckpoints()
+              .then(processAll)
+              .then(() => {
+                emitter.emit('checkpoints!')
                 emitter.emit('store!')
               })
           }
@@ -97,10 +107,23 @@ function grabRules () {
   ])
 }
 
+function grabCheckpoints () {
+  state.checkpoints = []
+
+  return state.db.allDocs({startkey: 'chk:', endkey: 'chk:~', include_docs: true})
+    .then(res => {
+      for (let i = 0; i < res.rows.length; i++) {
+        state.checkpoints.unshift(res.rows[i].doc)
+      }
+    })
+}
+
 function grabFacts () {
   state.facts = []
 
-  return state.db.allDocs({startkey: 'f:', endkey: 'f:~', include_docs: true})
+  let since = state.checkpoints.length ? state.checkpoints[0]._id.split(':')[1] : ''
+
+  return state.db.allDocs({startkey: `f:${since}`, endkey: 'f:~', include_docs: true})
     .then(res => {
       for (let i = 0; i < res.rows.length; i++) {
         state.facts.unshift(res.rows[i].doc)
@@ -110,6 +133,11 @@ function grabFacts () {
 
 function processAll () {
   state.store = {}
+
+  // init the store with the last checkpoint
+  if (state.checkpoints.length) {
+    state.store = state.checkpoints[0].checkpoint
+  }
 
   // cleanup errors and lines affected from rules
   for (let i = 0; i < state.rules.length; i++) {
@@ -128,7 +156,8 @@ module.exports.onStateChange = function (cb, selected = [
   'store',
   'modules',
   'facts',
-  'rules'
+  'rules',
+  'checkpoints'
 ]) {
   let dispatch = () => cb(state)
   let ddispatch = debounce(dispatch, 1) // on sequential emits, group them
@@ -190,7 +219,8 @@ var state = {
   store: {},
   modules: [],
   rules: [],
-  facts: []
+  facts: [],
+  checkpoints: []
 }
 
 var stores = JSON.parse(localStorage.getItem('stores') || '[]')
