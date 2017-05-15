@@ -3,7 +3,7 @@ const h = require('react-hyperscript')
 const page = require('page')
 
 const Preferences = require('./Preferences')
-const Input = require('./Input')
+const Facts = require('./Facts')
 const Rules = require('./Rules')
 const Browse = require('./Browse')
 const Sync = require('./Sync')
@@ -25,9 +25,9 @@ module.exports = createClass({
   componentDidMount () {
     this.cancel = onStateChange(({settings}) => this.setState({settings}))
 
-    page('/', '/input')
+    page('/', '/facts')
     page('/preferences', () => this.setState({route: {component: Preferences}}))
-    page('/input', () => this.setState({route: {component: Input}}))
+    page('/facts', () => this.setState({route: {component: Facts}}))
     page('/rules', () => this.setState({route: {component: Rules}}))
     page('/rules/:ruleId', ctx =>
       this.setState({
@@ -67,7 +67,7 @@ module.exports = createClass({
             h('a.nav-item', this.state.settings ? this.state.settings.name : 'parser-frenzy')
           ]),
           h('.nav-center', [
-            h('a.nav-item', {href: '/input/'}, 'input'),
+            h('a.nav-item', {href: '/facts/'}, 'facts'),
             h('a.nav-item', {href: '/rules/'}, 'rules'),
             h('a.nav-item', {href: '/browse/'}, 'browse'),
             h('a.nav-item', {href: '/sync/'}, 'sync')

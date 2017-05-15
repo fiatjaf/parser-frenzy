@@ -8,41 +8,7 @@ require('codemirror/mode/lua/lua')
 
 const {onStateChange} = require('./db')
 const log = require('./log')
-
-module.exports = createClass({
-  displayName: 'Rules',
-  getInitialState () {
-    return {
-      selected: ListOfRules
-    }
-  },
-
-  render () {
-    return (
-      h('#Rules', [
-        h('.tabs.is-centered', [
-          h('ul', [
-            h('li', {className: this.state.selected === ListOfRules ? 'is-active' : null}, [
-              h('a', {onClick: e => this.select(ListOfRules, e) }, 'Your Rules')
-            ]),
-            h('li', {className: this.state.selected === Modules ? 'is-active' : null}, [
-              h('a', {onClick: e => this.select(Modules, e) }, 'Lua Modules')
-            ]),
-            h('li', {className: this.state.selected === REPL ? 'is-active' : null}, [
-              h('a', {onClick: e => this.select(REPL, e) }, 'Lua Playground')
-            ])
-          ])
-        ]),
-        h(this.state.selected, this.props)
-      ])
-    )
-  },
-
-  select (tab, e) {
-    e.preventDefault()
-    this.setState({selected: tab})
-  }
-})
+const makeSubRouter = require('./helpers/sub-router')
 
 const REPL = createClass({
   displayName: 'REPL',
@@ -184,7 +150,7 @@ const Modules = createClass({
       ])
     ])
 
-    let renderModule = ({_id, _rev, code}, temp, editing) =>
+    let renderModule = ({_id, _rev, code}, editing) =>
       h(`.card.rule.${editing ? 'editing' : 'not-editing'}`, {key: _id}, [
         h('.card-header', [
           h('span.card-header-title', `module "${_id.split(':')[1]}"`)
@@ -192,7 +158,7 @@ const Modules = createClass({
         h('.card-content', [
           h('div.control', [
             h(CodeMirror, {
-              value: editing ? temp.code : code,
+              value: editing ? this.state.tempValues[_id].code : code,
               onChange: val => this.changed('code', _id, val),
               options: {
                 viewportMargin: Infinity,
@@ -220,7 +186,6 @@ const Modules = createClass({
         h('div', this.state.modules.map(module =>
           renderModule(
             module,
-            this.state.tempValues[module._id],
             this.state.editing === module._id
           )
         ))
@@ -518,3 +483,9 @@ const ListOfRules = createClass({
     })
   }
 })
+
+module.exports = makeSubRouter('Rules', [
+  [ListOfRules, 'Your Rules'],
+  [Modules, 'Lua Modules'],
+  [REPL, 'Lua Playground']
+])

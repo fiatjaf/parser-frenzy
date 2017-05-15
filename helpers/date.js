@@ -16,7 +16,7 @@ const months = [
 const today = new Date()
 
 module.exports.asLongAsNeeded = function (_id) {
-  let date = new Date(parseInt(_id.split(':')[1]))
+  let date = new Date(parseInt(_id.split(':')[1]) * 1000)
 
   if (today.getFullYear() === date.getFullYear()) {
     if (today.getMonth() === date.getMonth()) {

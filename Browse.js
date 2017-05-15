@@ -5,14 +5,29 @@ const jq = require('jq-web')
 const debounce = require('debounce')
 
 const {onStateChange} = require('./db')
+const makeSubRouter = require('./helpers/sub-router')
 
-module.exports = createClass({
-  displayName: 'Browse',
+function filterStore (store) {
+  var cur = this.state.store
+
+  for (let i = 0; i < this.props.path.length; i++) {
+    cur[this.props.path[i]] = cur[this.props.path[i]] || {}
+    cur = cur[this.props.path[i]]
+  }
+
+  let rootName = this.props.path.length ? this.props.path.join('.') : ':root'
+  return {current: cur, rootName}
+}
+
+module.exports.defaultProps = {
+  path: []
+}
+
+const Raw = createClass({
+  displayName: 'Raw',
   getInitialState () {
     return {
-      store: null,
-
-      selected: Raw
+      store: {}
     }
   },
 
@@ -25,59 +40,11 @@ module.exports = createClass({
   },
 
   render () {
-    if (!this.state.store) return h('div')
+    let {current} = filterStore(this.state.store)
 
-    var cur = this.state.store
-
-    for (let i = 0; i < this.props.path.length; i++) {
-      cur[this.props.path[i]] = cur[this.props.path[i]] || {}
-      cur = cur[this.props.path[i]]
-    }
-
-    let rootName = this.props.path.length ? this.props.path.join('.') : ':root'
-
-    return (
-      h('#Browse', [
-        h('.tabs.is-centered', [
-          h('ul', [
-            h('li', {className: this.state.selected === Raw ? 'is-active' : null}, [
-              h('a', {onClick: e => this.select(Raw, e) }, 'Raw')
-            ]),
-            h('li', {className: this.state.selected === JQ ? 'is-active' : null}, [
-              h('a', {onClick: e => this.select(JQ, e) }, 'jq')
-            ]),
-            h('li', {className: this.state.selected === SQL ? 'is-active' : null}, [
-              h('a', {onClick: e => this.select(SQL, e) }, 'SQL')
-            ])
-          ])
-        ]),
-        h('p', [
-          'data at ',
-          h('code', {title: 'change this position at the URL path -- or just click at "Browse"'}, rootName),
-          ':'
-        ]),
-        h(this.state.selected, {...this.props, store: cur})
-      ])
-    )
-  },
-
-  select (tab, e) {
-    e.preventDefault()
-    this.setState({selected: tab})
-  }
-})
-
-module.exports.defaultProps = {
-  path: []
-}
-
-const Raw = createClass({
-  displayName: 'Raw',
-
-  render () {
     return (
       h('#Raw', [
-        h('pre', [ h('code', JSON.stringify(this.props.store, null, 2)) ])
+        h('pre', [ h('code', JSON.stringify(current, null, 2)) ])
       ])
     )
   }
@@ -87,15 +54,25 @@ const JQ = createClass({
   displayName: 'JQ',
   getInitialState () {
     return {
+      current: {},
+
       jqfilter: '.',
       output: ''
     }
   },
 
   componentDidMount () {
-    this.dcalc = debounce(this.calc, 700)
+    this.cancel = onStateChange(({store}) => {
+      let {current} = filterStore(store)
+      this.setState({current})
+    })
 
+    this.dcalc = debounce(this.calc, 700)
     this.calc()
+  },
+
+  componentWillUnmount () {
+    this.cancel()
   },
 
   render () {
@@ -127,7 +104,7 @@ const JQ = createClass({
   calc () {
     var output
     try {
-      output = jq.raw(JSON.stringify(this.props.store), this.state.jqfilter)
+      output = jq.raw(JSON.stringify(this.state.current), this.state.jqfilter)
     } catch (e) {
       output = e.message
     }
@@ -153,3 +130,9 @@ const SQL = createClass({
     )
   }
 })
+
+module.exports = makeSubRouter('Facts', [
+  [Raw, 'Raw'],
+  [JQ, 'jq', 'Explore your data with jq'],
+  [SQL, 'SQL', 'Run SQL queries on your data']
+])

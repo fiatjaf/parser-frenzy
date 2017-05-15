@@ -14,13 +14,14 @@ main {
     }
     #Preferences .new-store .fa { font-size: 102px; }
 
-#Input {}
+#Facts {}
   #Input .preview {}
   #Input .add {}
   #Input .fact { margin: 10px 12px 10px 0; }
     #Input .fact .card-content { padding: 0.8rem 1.5rem; }
     #Input .fact .card-content .column:last-child { text-align: right; }
     #Input .fact .columns { margin-bottom: -.75rem; }
+    #Input .fact .date { text-align: right; }
 
 #Rules {}
   #ListOfRules .create { background: #fafaef; }
