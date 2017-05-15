@@ -1,7 +1,7 @@
 const createClass = require('create-react-class')
 const h = require('react-hyperscript')
 const CodeMirror = require('react-codemirror')
-const jq = require('jq-web')
+const jq = window.jq
 const debounce = require('debounce')
 
 const {onStateChange} = require('./db')

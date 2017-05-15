@@ -2,7 +2,7 @@ const createClass = require('create-react-class')
 const h = require('react-hyperscript')
 const CodeMirror = require('react-codemirror')
 const cuid = require('cuid')
-const glua = require('glua')
+const glua = window.glua
 
 require('codemirror/mode/lua/lua')
 

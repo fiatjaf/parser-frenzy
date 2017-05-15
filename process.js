@@ -1,4 +1,4 @@
-const glua = require('glua')
+const glua = window.glua
 const XRegExp = window.XRegExp
 
 const log = require('./log')
