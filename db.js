@@ -33,7 +33,7 @@ function loadStore (selectedStoreSettings) {
     .then(grabFacts)
     .then(() => {
       processAll()
-      emitter.emit('checkpoints!')
+      emitter.emit('checkpoint!')
       emitter.emit('rules!')
       emitter.emit('facts!')
       emitter.emit('modules!')
@@ -75,7 +75,7 @@ function loadStore (selectedStoreSettings) {
             grabCheckpoints()
               .then(processAll)
               .then(() => {
-                emitter.emit('checkpoints!')
+                emitter.emit('checkpoint!')
                 emitter.emit('store!')
               })
           }
@@ -108,12 +108,12 @@ function grabRules () {
 }
 
 function grabCheckpoints () {
-  state.checkpoints = []
+  state.checkpoint = null
 
   return state.db.allDocs({startkey: 'chk:', endkey: 'chk:~', include_docs: true})
     .then(res => {
       for (let i = 0; i < res.rows.length; i++) {
-        state.checkpoints.unshift(res.rows[i].doc)
+        state.checkpoint = res.rows[i].doc
       }
     })
 }
@@ -121,7 +121,7 @@ function grabCheckpoints () {
 function grabFacts () {
   state.facts = []
 
-  let since = state.checkpoints.length ? state.checkpoints[0]._id.split(':')[1] : ''
+  let since = state.checkpoint ? state.checkpoint._id.split(':')[1] : ''
 
   return state.db.allDocs({startkey: `f:${since}`, endkey: 'f:~', include_docs: true})
     .then(res => {
@@ -135,8 +135,8 @@ function processAll () {
   state.store = {}
 
   // init the store with the last checkpoint
-  if (state.checkpoints.length) {
-    state.store = state.checkpoints[0].checkpoint
+  if (state.checkpoint) {
+    state.store = {...state.checkpoint.checkpoint}
   }
 
   // cleanup errors and lines affected from rules
@@ -157,7 +157,7 @@ module.exports.onStateChange = function (cb, selected = [
   'modules',
   'facts',
   'rules',
-  'checkpoints'
+  'checkpoint'
 ]) {
   let dispatch = () => cb(state)
   let ddispatch = debounce(dispatch, 1) // on sequential emits, group them
@@ -220,7 +220,7 @@ var state = {
   modules: [],
   rules: [],
   facts: [],
-  checkpoints: []
+  checkpoint: null
 }
 
 var stores = JSON.parse(localStorage.getItem('stores') || '[]')

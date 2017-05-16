@@ -197,7 +197,7 @@ const Preload = createClass({
   displayName: 'Preload',
   getInitialState () {
     return {
-      checkpoints: [],
+      checkpoint: null,
       db: null,
 
       typed: '',
@@ -206,7 +206,13 @@ const Preload = createClass({
   },
 
   componentDidMount () {
-    this.cancel = onStateChange(({checkpoints, db}) => this.setState({checkpoints, db}), ['checkpoints', 'db'])
+    this.cancel = onStateChange(({checkpoint, db}) => {
+      var change = {checkpoint, db}
+      if (checkpoint) {
+        change.parsed = checkpoint.checkpoint
+      }
+      this.setState(change)
+    }, ['checkpoint', 'db'])
 
     this.dhandleTyped = debounce(this.handleTyped, 500)
   },
@@ -218,7 +224,7 @@ const Preload = createClass({
   render () {
     return (
       h('#Preload', [
-        h('form', [
+        !this.state.checkpoint && h('form', [
           h('.control', [
             h('textarea.textarea', {
               value: this.state.typed,
@@ -231,15 +237,18 @@ const Preload = createClass({
               onChange: this.handleFile
             })
           ]) || null
-        ]),
+        ]) || null,
         this.state.parsed && h('div', [
-          h('p', 'File contents:'),
+          h('p', this.state.checkpoint
+            ? `You have a checkpoint from ${dateFormat(this.state.checkpoint._id)},
+               so there's no way to preload data.`
+            : 'File contents:'),
           h('pre', [
             h('code', JSON.stringify(this.state.parsed, null, 2))
           ]),
-          h('button.button.is-primary', {
+          !this.state.checkpoint && h('button.button.is-primary', {
             onClick: this.save
-          }, 'Save this as initial data')
+          }, 'Save this as initial data') || null
         ]) || null
       ])
     )
