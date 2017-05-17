@@ -5,7 +5,8 @@ module.exports = {
   push_to,
   sum_at,
   merge_at,
-  remove_from
+  remove_from,
+  get_at
 }
 
 function update_at (store, path, fn) {
@@ -67,4 +68,14 @@ function remove_from (store, path, elem) {
 
     return cur
   })
+}
+function get_at (store, path, dflt) {
+  let props = path.split('.')
+  var cur = store
+  var prop = props.shift()
+  while (prop) {
+    cur = cur[prop]
+    if (!cur) return dflt
+  }
+  return cur
 }

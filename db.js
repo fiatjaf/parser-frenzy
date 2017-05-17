@@ -11,21 +11,68 @@ const emitter = new Emitter()
 
 var cancel = {cancel: () => {}}
 
-module.exports.newStore = newStore
-function newStore () {
-  let id = cuid.slug()
-  return {
-    name: id,
-    id: id
-  }
+// -- database management
+
+module.exports.listDatabases = listDatabases
+function listDatabases () {
+  return JSON.parse(localStorage.getItem('databases') || '{}')
 }
 
-module.exports.loadStore = loadStore
-function loadStore (selectedStoreSettings) {
+module.exports.createDatabase = createDatabase
+function createDatabase (id, name) {
+  id = id || cuid.slug()
+  name = name || id
+
+  let databases = listDatabases()
+  databases[id] = {name, id}
+  localStorage.setItem('databases', JSON.stringify(databases))
+
+  return {name, id}
+}
+
+module.exports.updateDatabase = updateDatabase
+function updateDatabase (id, update) {
+  databases[id] = {...databases[id], ...update}
+  localStorage.setItem('databases', JSON.stringify(databases))
+}
+
+module.exports.deleteDatabase = deleteDatabase
+function deleteDatabase (id) {
+  let tmpdb = new PouchDB(id)
+  tmpdb.destroy()
+    .then(() => log.info(`destroyed PouchDB ${id}.`))
+    .catch(log.error)
+
+  using = localStorage.getItem('using')
+  databases = listDatabases()
+
+  delete databases[id]
+
+  if (using === id) {
+    let dbase = databases[Object.keys(databases)[0]]
+    using = dbase.id
+    loadDatabase(dbase)
+  }
+
+  localStorage.setItem('databases', JSON.stringify(databases))
+  localStorage.setItem('using', using)
+}
+
+module.exports.findDatabase = findDatabase
+function findDatabase (id) {
+  return databases[id]
+}
+
+
+module.exports.loadDatabase = loadDatabase
+function loadDatabase (selectedSettings) {
   cancel.cancel()
 
-  state.settings = selectedStoreSettings
+  state.settings = selectedSettings
   state.db = new PouchDB(state.settings.id)
+
+  document.title = state.settings.name
+  localStorage.setItem('using', state.settings.id)
   emitter.emit('db!')
 
   grabCheckpoints()
@@ -180,37 +227,6 @@ module.exports.onStateChange = function (cb, selected = [
   }
 }
 
-module.exports.deleteStore = function (id) {
-  let tmpdb = new PouchDB(id)
-  tmpdb.destroy()
-    .then(() => log.info(`destroyed PouchDB ${id}.`))
-    .catch(log.error)
-
-  using = localStorage.getItem('using')
-  stores = JSON.parse(localStorage.getItem('stores') || '[]')
-
-  for (let i = 0; i < stores.length; i++) {
-    if (stores[i].id === id) {
-      stores.splice(i, 1)
-      break
-    }
-  }
-
-  if (using === id) {
-    using = stores[0].id
-    loadStore(stores[0])
-  }
-
-  localStorage.setItem('stores', JSON.stringify(stores))
-  localStorage.setItem('using', using)
-}
-
-function findStore (id) {
-  for (let i = 0; i < stores.length; i++) {
-    if (stores[i].id === id) return stores[i]
-  }
-}
-
 // ---- ---- ----
 // init
 var state = {
@@ -223,18 +239,24 @@ var state = {
   checkpoint: null
 }
 
-var stores = JSON.parse(localStorage.getItem('stores') || '[]')
+var databases = listDatabases()
 var using = localStorage.getItem('using')
 
-if (stores.length === 0) {
-  let store = newStore()
-  stores.push(store)
-  using = store.id
-  localStorage.setItem('stores', JSON.stringify(stores))
-  localStorage.setItem('using', using)
-} else if (!using) {
-  using = stores[0].id
-  localStorage.setItem('using', using)
+function init () {
+  try {
+    if (Object.keys(databases).length === 0) {
+      let dbase = createDatabase()
+      loadDatabase(dbase)
+    } else if (!using) {
+      let dbase = findDatabase(Object.keys(databases)[0])
+      loadDatabase(dbase)
+    } else {
+      loadDatabase(findDatabase(using))
+    }
+  } catch (e) {
+    using = null
+    init()
+  }
 }
 
-loadStore(findStore(using))
+init()

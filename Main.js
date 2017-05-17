@@ -6,7 +6,6 @@ const Preferences = require('./Preferences')
 const Facts = require('./Facts')
 const Rules = require('./Rules')
 const Browse = require('./Browse')
-const Sync = require('./Sync')
 
 const {onStateChange} = require('./db')
 
@@ -50,12 +49,16 @@ module.exports = createClass({
         }
       })
     )
-    page('/sync', () => this.setState({route: {component: Sync}}))
     page({hashbang: true})
   },
 
   componentWillUnmount () {
     this.cancel()
+  },
+
+  componentWillUpdate () {
+    let dbName = document.title.split(' :: ')[0]
+    document.title = `${dbName} :: ${this.state.route.component.displayName}`
   },
 
   render () {
@@ -64,13 +67,14 @@ module.exports = createClass({
         h('nav.nav', [
           h('.nav-left', [
             h('a.nav-item', {href: '/preferences/'}, h('span.icon', [ h('i.fa.fa-bars') ])),
-            h('a.nav-item', this.state.settings ? this.state.settings.name : 'parser-frenzy')
+            h('a.nav-item', {href: '/facts/'}, this.state.settings
+              ? this.state.settings.name
+              : 'parser-frenzy')
           ]),
           h('.nav-center', [
             h('a.nav-item', {href: '/facts/'}, 'facts'),
             h('a.nav-item', {href: '/rules/'}, 'rules'),
-            h('a.nav-item', {href: '/browse/'}, 'browse'),
-            h('a.nav-item', {href: '/sync/'}, 'sync')
+            h('a.nav-item', {href: '/browse/'}, 'browse')
           ])
         ]),
         h('main.columns', [
