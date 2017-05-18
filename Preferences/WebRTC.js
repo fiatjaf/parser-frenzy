@@ -7,115 +7,10 @@ const RTCSessionDescription = window.RTCSessionDescription || window.webkitRTCSe
 const PouchDB = require('pouchdb-browser')
 const PouchReplicator = require('pouch-replicate-webrtc')
 
-const {listDatabases, findDatabase, createDatabase, updateDatabase,
-       loadDatabase, deleteDatabase} = require('./db')
-const log = require('./log')
-const {onStateChange} = require('./db')
-const makeSubRouter = require('./helpers/sub-router')
+const {createDatabase} = require('../db')
+const {onStateChange} = require('../db')
 
-const Select = createClass({
-  displayName: 'Select',
-  getInitialState () {
-    return {
-      editing: null
-    }
-  },
-
-  render () {
-    let databases = listDatabases()
-    let using = localStorage.getItem('using')
-
-    let renderDatabase = (dbase, using, editing) =>
-      h('.column.is-4', [
-        h('.card.dbase', {className: using ? 'using' : '', id: dbase.id}, [
-          h('.card-header', [
-            h('p.card-header-title', dbase.name)
-          ]),
-          h('.card-content', [
-            h('form', {onSubmit: e => this.updateDatabase(dbase.id, e)}, [
-              h('label.control', [
-                'name: ',
-                h('input.input', {
-                  name: 'name',
-                  defaultValue: dbase.name,
-                  disabled: !editing
-                })
-              ])
-            ])
-          ]),
-          h('.card-footer', editing
-            ? [
-              h('a.card-footer-item', {onClick: e => this.destroyDatabase(dbase.id, e) }, 'Destroy'),
-              h('a.card-footer-item', {onClick: e => this.updateDatabase(dbase.id, e)}, 'Save')
-            ]
-            : [
-              using
-              ? h('span.card-footer-item', 'Using')
-              : h('a.card-footer-item', {onClick: e => this.useDatabase(dbase.id, e)}, 'Use'),
-              h('a.card-footer-item', {onClick: e => this.startEditing(dbase.id, e)}, 'Edit')
-            ]
-          )
-        ])
-      ])
-
-    return (
-      h('#Select', [
-        h('.columns.is-multiline', Object.keys(databases).map(id =>
-          renderDatabase(databases[id], using === id, this.state.editing === id)
-        ).concat(
-          h('.column.is-4', [
-            h('.card.new-database', [
-              h('.card-image', [
-                h('a', {onClick: this.createDatabase}, [ h('i.fa.fa-plus') ])
-              ])
-            ])
-          ])
-        ))
-      ])
-    )
-  },
-
-  startEditing (id, e) {
-    e.preventDefault()
-    this.setState({editing: id})
-  },
-
-  updateDatabase (id, e) {
-    e.preventDefault()
-    let thisformelem = e.target.parentNode.parentNode
-    updateDatabase(id, {name: thisformelem.querySelector('[name="name"]').value})
-    this.setState({editing: null})
-  },
-
-  useDatabase (id, e) {
-    e.preventDefault()
-    if (this.state.editing === id) this.updateDatabase(id, e)
-    loadDatabase(findDatabase(id))
-    this.forceUpdate()
-  },
-
-  createDatabase (e) {
-    e.preventDefault()
-    let dbase = createDatabase()
-    loadDatabase(dbase)
-    this.forceUpdate()
-  },
-
-  destroyDatabase (id, e) {
-    e.preventDefault()
-    let dbase = findDatabase(id)
-    log.confirm(
-      `Are you sure you want to destroy the database "${dbase.name}"
-       (id: "${dbase.id}") forever?`
-    , () => {
-      deleteDatabase(dbase.id)
-      this.componentDidMount()
-      this.forceUpdate()
-    })
-  }
-})
-
-const WebRTC = createClass({
+module.exports = createClass({
   displayName: 'WebRTC',
   getInitialState () {
     return {
@@ -354,24 +249,3 @@ const WebRTC = createClass({
     }
   }
 })
-
-const CouchDB = createClass({
-  displayName: 'CouchDB',
-  getInitialState () {
-    return {}
-  },
-
-  render () {
-    return (
-      h('#CouchDB', [
-        h('.columns')
-      ])
-    )
-  }
-})
-
-module.exports = makeSubRouter('Preferences', [
-  [Select, 'Select database', 'Choose a local database to use now.'],
-  [WebRTC, 'Direct browser replication', 'Use a manually configured WebRTC connection to migrate your databases to other browsers'],
-  [CouchDB, 'CouchDB sync', 'Sync your database to a remote CouchDB']
-])

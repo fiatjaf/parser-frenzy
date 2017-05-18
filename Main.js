@@ -1,6 +1,7 @@
 const createClass = require('create-react-class')
 const h = require('react-hyperscript')
 const page = require('page')
+const qs = require('qs')
 
 const Preferences = require('./Preferences')
 const Facts = require('./Facts')
@@ -24,31 +25,16 @@ module.exports = createClass({
   componentDidMount () {
     this.cancel = onStateChange(({settings}) => this.setState({settings}))
 
-    page('/', '/facts')
-    page('/preferences', () => this.setState({route: {component: Preferences}}))
-    page('/facts', () => this.setState({route: {component: Facts}}))
-    page('/rules', () => this.setState({route: {component: Rules}}))
-    page('/rules/:ruleId', ctx =>
-      this.setState({
-        route: {
-          component: Rules,
-          props: {
-            rule: ctx.params.ruleId
-          }
-        }
-      })
-    )
-    page('/browse', () => this.setState({route: {component: Browse}}))
-    page('/browse/*', ctx =>
-      this.setState({
-        route: {
-          component: Browse,
-          props: {
-            path: ctx.params[0].split('/').filter(x => x)
-          }
-        }
-      })
-    )
+    page('/', '/facts/input')
+    page('*', (ctx, next) => {
+      ctx.query = qs.parse(location.search.slice(1))
+      next()
+    })
+
+    page('/preferences/*', ctx => this.setState({route: {component: Preferences, props: ctx}}))
+    page('/facts/*', ctx => this.setState({route: {component: Facts, props: ctx}}))
+    page('/rules/*', ctx => this.setState({route: {component: Rules, props: ctx}}))
+    page('/browse/*', ctx => this.setState({route: {component: Browse, props: ctx}}))
     page({hashbang: true})
   },
 

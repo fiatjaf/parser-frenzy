@@ -38,6 +38,7 @@
     "page": "^1.7.1",
     "pouch-replicate-webrtc": "github:fiatjaf/pouch-replicate-webrtc",
     "pouchdb-browser": "^6.2.0",
+    "qs": "^6.4.0",
     "react": "^15.5.4",
     "react-codemirror": "^0.3.0",
     "react-dom": "^15.5.4",
