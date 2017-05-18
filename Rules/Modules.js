@@ -48,14 +48,13 @@ module.exports = createClass({
             h('input.input', {
               value: this.state.newname,
               onChange: e => this.setState({newname: e.target.value}),
-              title: 'a name for this module'
+              placeholder: 'a name for this module'
             })
           ]),
           h('div.control', [
             h(CodeMirror, {
               value: this.state.newcode,
               onChange: newcode => this.setState({newcode}),
-              title: 'code for the lua module that you\'ll be able to require from rules',
               options: {
                 viewportMargin: Infinity,
                 mode: 'lua'

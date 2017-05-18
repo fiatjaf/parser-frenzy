@@ -40,10 +40,10 @@ module.exports = createClass({
             h('.control', [
               h('textarea', {
                 onChange: this.gotRemoteData,
-                title: 'Paste data received from the remote browser here.'
+                placeholder: 'Paste data received from the remote browser here.'
               })
             ]),
-            h('pre', {title: 'Copy this data and send it to the remote browser.'}, [
+            h('pre', {'data-balooon': 'Copy this data and send it to the remote browser.'}, [
               h('code', this.state.localData)
             ])
           ]),

@@ -42,7 +42,12 @@ module.exports = (name, children) =>
           h('.tabs.is-centered', [
             h('ul', children.map(([subpath, component, tabTitle, hint]) =>
               h('li', {className: this.state.selected === component ? 'is-active' : null}, [
-                h('a', {title: hint, href: `/${basepath}/${subpath}` }, tabTitle)
+                h('a', {
+                  'data-balloon': hint,
+                  'data-balloon-pos': 'left',
+                  'data-balloon-length': 'large',
+                  href: `/${basepath}/${subpath}`
+                }, tabTitle)
               ])
             ))
           ]),

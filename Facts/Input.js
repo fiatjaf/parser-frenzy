@@ -52,14 +52,14 @@ module.exports = createClass({
               h('.column.is-narrow', [
                 h('a.tag.is-success', {
                   onClick: e => this.open(_id, e),
-                  title: `affected ${affected.length} points.`
+                  'data-balooon': `affected ${affected.length} points.`
                 }, affected.length)
               ]) || null,
             !opened && errors.length > 0 &&
               h('.column.is-narrow', [
                 h('a.tag.is-success', {
                   onClick: e => this.open(_id, e),
-                  title: `${errors.length} errors.`
+                  'data-balloon': `${errors.length} errors.`
                 }, errors.length)
               ]) || null,
             h('.column.is-narrow.date', dateFormat(_id)),

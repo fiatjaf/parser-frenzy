@@ -45,10 +45,8 @@ main {
 .content { color: inherit; }
 .table { color: inherit; background-color: inherit; }
 .tag { margin: 0 3px; }
-
-.card {
-  margin: 12px 12px 12px 0;
-}
+.card { margin: 12px 12px 12px 0; }
+.tabs { height: 3em; margin-top: -1em; }
 
 .CodeMirror {
   border: 1px solid #eee;
@@ -58,63 +56,4 @@ main {
 .notie-container {
   top: auto !important;
   bottom: 0;
-}
-
-/* balloons.css */
-button[title] {
-  overflow: visible;
-}
-[title] {
-  position: relative;
-}
-[title]:before,
-[title]:after {
-  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=0)";
-  filter: alpha(opacity=0);
-  -khtml-opacity: 0;
-  -moz-opacity: 0;
-  opacity: 0;
-  pointer-events: none;
-  -webkit-transition: all 0.18s ease-out 0.18s;
-  transition: all 0.18s ease-out 0.18s;
-  bottom: 100%;
-  left: 50%;
-  position: absolute;
-  z-index: 10;
-  -webkit-transform: translate(-50%, 10px);
-  -ms-transform: translate(-50%, 10px);
-  transform: translate(-50%, 10px);
-  -webkit-transform-origin: top;
-  -ms-transform-origin: top;
-  transform-origin: top;
-}
-[title]:after {
-  background: rgba(17, 17, 17, 0.9);
-  border-radius: 4px;
-  color: #fff;
-  content: attr(title);
-  font-size: 12px;
-  padding: .5em 1em;
-  white-space: nowrap;
-  margin-bottom: 11px;
-}
-[title]:before {
-  background: url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2236px%22%20height%3D%2212px%22%3E%3Cpath%20fill%3D%22rgba%2817,%2017,%2017,%200.9%29%22%20transform%3D%22rotate%280%29%22%20d%3D%22M2.658,0.000%20C-13.615,0.000%2050.938,0.000%2034.662,0.000%20C28.662,0.000%2023.035,12.002%2018.660,12.002%20C14.285,12.002%208.594,0.000%202.658,0.000%20Z%22/%3E%3C/svg%3E') no-repeat;
-  background-size: 100% auto;
-  height: 6px;
-  width: 18px;
-  content: "";
-  margin-bottom: 5px;
-}
-[title]:hover:before,
-[title]:hover:after {
-  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=100)";
-  filter: alpha(opacity=100);
-  -khtml-opacity: 1;
-  -moz-opacity: 1;
-  opacity: 1;
-  pointer-events: auto;
-  -webkit-transform: translate(-50%, 0);
-  -ms-transform: translate(-50%, 0);
-  transform: translate(-50%, 0);
 }

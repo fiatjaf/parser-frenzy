@@ -5,6 +5,7 @@ const always = [
   'https://cdnjs.cloudflare.com/ajax/libs/bulma/0.4.1/css/bulma.min.css',
   'https://cdnjs.cloudflare.com/ajax/libs/notie/4.3.1/notie.min.css',
   'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.25.2/codemirror.min.css',
+  'https://cdnjs.cloudflare.com/ajax/libs/balloon-css/0.4.0/balloon.min.css',
   'https://cdnjs.cloudflare.com/ajax/libs/notie/4.3.0/notie.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/xregexp/3.2.0/xregexp-all.min.js',
   'https://cdn.rawgit.com/fiatjaf/glua/dd440803/dist/glua.min.js',

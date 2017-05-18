@@ -56,7 +56,7 @@ module.exports = createClass({
             h('input.input', {
               value: this.state.newpattern,
               onChange: e => this.setState({newpattern: e.target.value}),
-              title: 'a valid Javascript regex pattern',
+              'data-balloon': 'a valid Javascript regex pattern',
               placeholder: `\\w{2,5}: +\\d\\d(,\\d\\d)?`
             })
           ]),
@@ -64,7 +64,6 @@ module.exports = createClass({
             h(CodeMirror, {
               value: this.state.newcode,
               onChange: newcode => this.setState({newcode}),
-              title: 'lua code that will change the store in response to a line that matches',
               options: {
                 viewportMargin: Infinity,
                 mode: 'lua'
@@ -85,10 +84,10 @@ module.exports = createClass({
             `rule ${_id.split(':')[1]} `,
             !opened &&
               facts.length > 0 &&
-                h('span.tag.is-success', {title: `${facts.length} matched.`}, facts.length) || null,
+                h('span.tag.is-success', {'data-balloon': `${facts.length} matched.`}, facts.length) || null,
             !opened &&
               errors.length > 0 &&
-                h('span.tag.is-danger', {title: `${errors.length} errored.`}, errors.length) || null
+                h('span.tag.is-danger', {'data-balloon': `${errors.length} errored.`}, errors.length) || null
           ]),
           h('a.card-header-icon', { onClick: e => this.toggleOpen(_id, e) }, [
             h('span.icon', [ h(`i.fa.fa-angle-${opened ? 'down' : 'up'}`) ])
