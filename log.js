@@ -39,8 +39,8 @@ module.exports = {
     })
   },
 
-  confirm (text, confirmed) {
-    notie.confirm({text}, confirmed)
+  confirm (text, confirmed, cancelled) {
+    notie.confirm({text}, confirmed, cancelled)
   }
 }
 

@@ -16,7 +16,12 @@ const months = [
 const today = new Date()
 
 module.exports.asLongAsNeeded = function (_id) {
-  let date = new Date(parseInt(_id.split(':')[1]) * 1000)
+  let timestamp = parseInt(_id.split(':')[1])
+  if (timestamp < 100) {
+    return `time ${timestamp}`
+  }
+
+  let date = new Date(timestamp * 1000)
 
   if (today.getFullYear() === date.getFullYear()) {
     if (today.getMonth() === date.getMonth()) {

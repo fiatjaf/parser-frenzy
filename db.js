@@ -221,7 +221,7 @@ module.exports.onStateChange = function (cb, selected = [
   return () => {
     for (let i = 0; i < selected.length; i++) {
       let what = selected[i]
-      emitter.off(what + '!', dispatch)
+      emitter.off(what + '!', ddispatch)
     }
     emitter.off('!', dispatch)
   }
