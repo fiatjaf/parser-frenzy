@@ -1,5 +1,6 @@
 const createClass = require('create-react-class')
 const h = require('react-hyperscript')
+const BlockPicker = require('react-color/lib/components/block/Block').default
 
 const {listDatabases, findDatabase, createDatabase, updateDatabase,
        loadDatabase, deleteDatabase} = require('../db')
@@ -9,6 +10,8 @@ module.exports = createClass({
   displayName: 'Select',
   getInitialState () {
     return {
+      tempValues: {},
+
       editing: null
     }
   },
@@ -21,24 +24,48 @@ module.exports = createClass({
       h('.column.is-4', [
         h('.card.dbase', {className: using ? 'using' : '', id: dbase.id}, [
           h('.card-header', [
-            h('p.card-header-title', dbase.name)
+            h('p.card-header-title', `${dbase.name} (${dbase.id})`)
           ]),
           h('.card-content', [
-            h('form', {onSubmit: e => this.updateDatabase(dbase.id, e)}, [
-              h('label.control', [
+            h('form', {onSubmit: e => this.save(dbase.id, e)}, [
+              h('label.field', [
                 'name: ',
                 h('input.input', {
                   name: 'name',
-                  defaultValue: dbase.name,
+                  value: editing ? this.state.tempValues[dbase.id].name : dbase.name,
+                  onChange: e => {
+                    let val = e.target.value
+                    this.setState(st => {
+                      st.tempValues[dbase.id]['name'] = val
+                      return st
+                    })
+                  },
                   disabled: !editing
                 })
-              ])
+              ]),
+              editing && h('label.field', [
+                'background color: ',
+                h(BlockPicker, {
+                  colors: [
+                    '#baedfc', '#90edeb', '#6382d8', '#9bf7ce', '#f495b3',
+                    '#8ea5f9', '#f2c393', '#cfc6ff', '#b5ffaf', '#ffbfeb'
+                  ],
+                  color: editing
+                    ? this.state.tempValues[dbase.id].bgcolor
+                    : dbase.bgcolor,
+                  onChangeComplete: color => this.setState(st => {
+                    st.tempValues[dbase.id]['bgcolor'] = color.hex
+                    return st
+                  }),
+                  triangle: 'hide'
+                })
+              ]) || null
             ])
           ]),
           h('.card-footer', editing
             ? [
               h('a.card-footer-item', {onClick: e => this.destroyDatabase(dbase.id, e) }, 'Destroy'),
-              h('a.card-footer-item', {onClick: e => this.updateDatabase(dbase.id, e)}, 'Save')
+              h('a.card-footer-item', {onClick: e => this.save(dbase.id, e)}, 'Save')
             ]
             : [
               using
@@ -69,21 +96,23 @@ module.exports = createClass({
 
   startEditing (id, e) {
     e.preventDefault()
-    this.setState({editing: id})
+    this.setState(st => {
+      st.editing = id
+      st.tempValues = listDatabases()
+      return st
+    })
   },
 
-  updateDatabase (id, e) {
+  save (id, e) {
     e.preventDefault()
-    let thisformelem = e.target.parentNode.parentNode
-    updateDatabase(id, {name: thisformelem.querySelector('[name="name"]').value})
+    updateDatabase(id, this.state.tempValues[id])
     this.setState({editing: null})
   },
 
   useDatabase (id, e) {
     e.preventDefault()
-    if (this.state.editing === id) this.updateDatabase(id, e)
     loadDatabase(findDatabase(id))
-    this.forceUpdate()
+    if (this.state.editing === id) this.save(id, e)
   },
 
   createDatabase (e) {

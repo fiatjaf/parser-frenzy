@@ -43,7 +43,7 @@ module.exports = createClass({
               updateDatabase(this.state.settings.id, {couch: e.target.value.trim()})
           })
         ]),
-        h('button.button.is-primary', {
+        h('button.button.is-large.is-fullwidth.is-primary', {
           disabled: this.state.syncing,
           onClick: this.sync
         }, this.state.syncing

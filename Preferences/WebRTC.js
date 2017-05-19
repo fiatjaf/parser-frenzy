@@ -49,7 +49,7 @@ module.exports = createClass({
           ]),
           h('.column.is-half', [
             h('.control', [
-              h('button.button', {
+              h('button.button.is-info.is-medium.is-fullwidth', {
                 onClick: this.start
               }, `Start a connection to replicate "${this.state.settings.name}" to/from elsewhere.`)
             ]),

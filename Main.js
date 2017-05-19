@@ -23,7 +23,10 @@ module.exports = createClass({
   },
 
   componentDidMount () {
-    this.cancel = onStateChange(({settings}) => this.setState({settings}), ['settings'])
+    this.cancel = onStateChange(({settings}) => {
+      this.setState({settings})
+      document.body.style.backgroundColor = settings.bgcolor || 'rgba(161, 228, 7, 0.44)'
+    }, ['settings'])
 
     page('/', '/facts/input')
     page('*', (ctx, next) => {
