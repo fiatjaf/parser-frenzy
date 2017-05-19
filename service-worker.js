@@ -9,12 +9,12 @@ const always = [
   'https://cdnjs.cloudflare.com/ajax/libs/notie/4.3.0/notie.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/xregexp/3.2.0/xregexp-all.min.js',
   'https://cdn.rawgit.com/fiatjaf/glua/dd440803/dist/glua.min.js',
-  'https://cdn.rawgit.com/fiatjaf/jq-web/2050f2f/jq.min.js',
-  'https://cdn.rawgit.com/fiatjaf/jq-web/2050f2f/jq.wasm.min.js',
-  'https://cdn.rawgit.com/fiatjaf/jq-web/2050f2f/jq.wasm.wasm'
+  'https://cdn.rawgit.com/fiatjaf/jq-web/10f96a5/jq.min.js',
+  'https://cdn.rawgit.com/fiatjaf/jq-web/10f96a5/jq.wasm.min.js',
+  'https://cdn.rawgit.com/fiatjaf/jq-web/10f96a5/jq.wasm.wasm'
 ]
 
-const currentCache = 'v2'
+const currentCache = 'v3'
 
 this.addEventListener('install', event => {
   event.waitUntil(
@@ -53,7 +53,7 @@ self.addEventListener('fetch', event => {
 
   // naked wasm binary file
   if (event.request.url.match(/jq.wasm.wasm/)) {
-    let req = new Request('https://cdn.rawgit.com/fiatjaf/jq-web/2050f2f/jq.wasm.wasm', {mode: 'no-cors'})
+    let req = new Request('https://cdn.rawgit.com/fiatjaf/jq-web/10f96a5/jq.wasm.wasm', {mode: 'no-cors'})
     event.respondWith(caches.match(req))
     return
   }
