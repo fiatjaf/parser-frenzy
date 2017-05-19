@@ -12,7 +12,7 @@ module.exports = createClass({
   },
 
   componentDidMount () {
-    this.cancel = onStateChange(({store}) => this.setState({store}))
+    this.cancel = onStateChange(({store}) => this.setState({store}), ['store'])
   },
 
   componentWillUnmount () {

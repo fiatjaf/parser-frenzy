@@ -1,4 +1,4 @@
-const PouchDB = require('pouchdb-browser')
+const PouchDB = window.PouchDB
 const Emitter = require('tiny-emitter')
 const cuid = require('cuid')
 const XRegExp = window.XRegExp
@@ -33,7 +33,9 @@ function createDatabase (id, name) {
 module.exports.updateDatabase = updateDatabase
 function updateDatabase (id, update) {
   databases[id] = {...databases[id], ...update}
+  if (state.settings.id === id) state.settings = databases[id]
   localStorage.setItem('databases', JSON.stringify(databases))
+  emitter.emit('settings!')
 }
 
 module.exports.deleteDatabase = deleteDatabase
@@ -52,6 +54,7 @@ function deleteDatabase (id) {
     let dbase = databases[Object.keys(databases)[0]]
     using = dbase.id
     loadDatabase(dbase)
+    emitter.emit('settings!')
   }
 
   localStorage.setItem('databases', JSON.stringify(databases))

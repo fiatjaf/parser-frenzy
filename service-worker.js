@@ -7,6 +7,7 @@ const always = [
   'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.25.2/codemirror.min.css',
   'https://cdnjs.cloudflare.com/ajax/libs/balloon-css/0.4.0/balloon.min.css',
   'https://cdnjs.cloudflare.com/ajax/libs/notie/4.3.0/notie.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/pouchdb/6.2.0/pouchdb.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/xregexp/3.2.0/xregexp-all.min.js',
   'https://cdn.rawgit.com/fiatjaf/glua/dd440803/dist/glua.min.js',
   'https://cdn.rawgit.com/fiatjaf/jq-web/10f96a5/jq.min.js',
@@ -37,6 +38,8 @@ this.addEventListener('activate', event => {
 })
 
 self.addEventListener('fetch', event => {
+  if (event.request.method !== 'GET') return
+
   // for the predefined urls we'll always serve them from the cache
   if (always.indexOf(event.request.url) !== -1) {
     // jq, wasm version

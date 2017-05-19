@@ -23,7 +23,7 @@ module.exports = createClass({
   },
 
   componentDidMount () {
-    this.cancel = onStateChange(({settings}) => this.setState({settings}))
+    this.cancel = onStateChange(({settings}) => this.setState({settings}), ['settings'])
 
     page('/', '/facts/input')
     page('*', (ctx, next) => {

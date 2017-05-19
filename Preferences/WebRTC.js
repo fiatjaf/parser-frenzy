@@ -4,7 +4,7 @@ const cuid = require('cuid')
 const RTCPeerConnection = window.RTCPeerConnection || window.webkitRTCPeerConnection
 const RTCIceCandidate = window.RTCIceCandidate || window.webkitRTCIceCandidate
 const RTCSessionDescription = window.RTCSessionDescription || window.webkitRTCSessionDescription
-const PouchDB = require('pouchdb-browser')
+const PouchDB = window.PouchDB
 const PouchReplicator = require('pouch-replicate-webrtc')
 
 const {createDatabase} = require('../db')
