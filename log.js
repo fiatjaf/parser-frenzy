@@ -8,10 +8,6 @@ module.exports = {
     console.log.apply(console, arguments)
   },
 
-  debug () {
-    console.debug.apply(console, arguments)
-  },
-
   error (e) {
     if (e.stack) {
       console.error(e.stack)

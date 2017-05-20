@@ -52,12 +52,12 @@ module.exports = createClass({
               h('.column.is-narrow', [
                 h('a.tag.is-success', {
                   onClick: e => this.open(_id, e),
-                  'data-balooon': `affected ${affected.length} points.`
+                  'data-balloon': `affected ${affected.length} points.`
                 }, affected.length)
               ]) || null,
             !opened && errors.length > 0 &&
               h('.column.is-narrow', [
-                h('a.tag.is-success', {
+                h('a.tag.is-danger', {
                   onClick: e => this.open(_id, e),
                   'data-balloon': `${errors.length} errors.`
                 }, errors.length)

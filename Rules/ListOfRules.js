@@ -84,7 +84,7 @@ module.exports = createClass({
             `rule ${_id.split(':')[1]} `,
             !opened &&
               facts.length > 0 &&
-                h('span.tag.is-success', {'data-balloon': `${facts.length} matched.`}, facts.length) || null,
+                h('span.tag.is-info', {'data-balloon': `${facts.length} matched.`}, facts.length) || null,
             !opened &&
               errors.length > 0 &&
                 h('span.tag.is-danger', {'data-balloon': `${errors.length} errored.`}, errors.length) || null
@@ -114,7 +114,7 @@ module.exports = createClass({
           ]),
           opened && h('.facts', facts.map(fact =>
             h('p', [
-              h('span.tag.is-success', 'matched'),
+              h('span.tag.is-info', 'matched'),
               ' ',
               h('code', fact.line)
             ])
