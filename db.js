@@ -1,7 +1,7 @@
 const PouchDB = window.PouchDB
 const Emitter = require('tiny-emitter')
 const cuid = require('cuid')
-const XRegExp = window.XRegExp
+const PEGjs = window.PEG
 const debounce = require('debounce')
 
 const log = require('./log')

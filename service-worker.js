@@ -8,14 +8,14 @@ const always = [
   'https://cdnjs.cloudflare.com/ajax/libs/balloon-css/0.4.0/balloon.min.css',
   'https://cdnjs.cloudflare.com/ajax/libs/notie/4.3.0/notie.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/pouchdb/6.2.0/pouchdb.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/xregexp/3.2.0/xregexp-all.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/pegjs/0.9.0/peg.min.js',
   'https://cdn.rawgit.com/fiatjaf/glua/dd440803/dist/glua.min.js',
   'https://cdn.rawgit.com/fiatjaf/jq-web/10f96a5/jq.min.js',
   'https://cdn.rawgit.com/fiatjaf/jq-web/10f96a5/jq.wasm.min.js',
   'https://cdn.rawgit.com/fiatjaf/jq-web/10f96a5/jq.wasm.wasm'
 ]
 
-const currentCache = 'v3'
+const currentCache = 'v4'
 
 this.addEventListener('install', event => {
   event.waitUntil(
