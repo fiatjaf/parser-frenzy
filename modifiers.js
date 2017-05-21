@@ -1,4 +1,5 @@
 const deepmerge = require('deepmerge')
+const fuzzyset = require('fuzzyset')
 
 module.exports = ref
 
@@ -11,7 +12,7 @@ function ref (root, path, affected, position) {
   var key = path.slice(-1)[0]
   var val = get_or_create(parent, key)
 
-  return {
+  var self = {
     path (p) {
       return ref(val, array_from_lua(p), affected, position.concat(p))
     },
@@ -20,8 +21,29 @@ function ref (root, path, affected, position) {
       return ref(val, [k], affected, position.concat(k))
     },
 
-    get (p) {
+    get () {
+      return val
+    },
+
+    get_at (p) {
       return get_at(val, array_from_lua(p))
+    },
+
+    search (q, pathindexer) {
+      pathindexer = array_from_lua(pathindexer)
+      var wordmap = {}
+      if (typeof val === 'object') {
+        for (let i = 0; i < val.length; i++) {
+          let word = get_at(val[i], pathindexer)
+          if (typeof word !== 'string') continue
+          let ref = self.child(i)
+          wordmap[word] = ref
+        }
+      } else return []
+
+      return fuzzyset(Object.keys(wordmap))
+        .get(q)
+        .map(([score, word]) => ({score, word, ref: wordmap[word]}))
     },
 
     replace (v) {
@@ -85,6 +107,8 @@ function ref (root, path, affected, position) {
       affected.push({kind: 'remove', at: position.concat(arraypath), val: v})
     }
   }
+
+  return self
 }
 
 function get_at (root, path) {
