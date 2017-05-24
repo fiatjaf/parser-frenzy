@@ -3,7 +3,6 @@ const {createToken, Lexer, Parser} = window.chevrotain
 const unicodeLetter = require('./unicode-letter')
 
 module.exports.parseRule = parseRule
-module.exports.makeLineParser = makeLineParser
 
 const WORD = createToken({
   name: 'WORD',
@@ -136,95 +135,4 @@ function parseRule (text) {
     lexErrors: lexResult.errors,
     parseErrors: ruleParser.errors
   }
-}
-
-function makeLineParser (directives) {
-  let {regex, parameters} = buildRegex(directives)
-  var re = new RegExp(regex)
-
-  return function parseLine (text) {
-    let match = re.exec(text.trim())
-    if (match) {
-      var res = {}
-      for (let i = 0; i < parameters.length; i++) {
-        let {name: paramName, process} = parameters[i]
-        let matched = match[i + 1 /* because 0 in regex matches is the whole thing */]
-        if (matched) {
-          res[paramName] = process(matched)
-        }
-      }
-      return res
-    }
-  }
-}
-
-function buildRegex (directives) {
-  var regex = ''
-  var parameters = []
-
-  for (let i = 0; i < directives.length; i++) {
-    let directive = directives[i]
-    switch (directive.kind) {
-      case 'whitespace':
-        regex += '\\s+'
-        break
-      case 'literal':
-        regex += directive.string
-        break
-      case 'alternatives':
-      case 'optional':
-        var subregexes = []
-        for (let s = 0; s < directive.alternatives.length; s++) {
-          let {regex: subregex, parameters: subparameters} = buildRegex(directive.alternatives[s])
-          subregexes.push(subregex)
-          parameters = parameters.concat(subparameters)
-        }
-        regex += `(?:${subregexes.join('|')})`
-        if (directive.kind === 'optional') {
-          regex += '?'
-        }
-        break
-      case 'parameter':
-        var paramDef = {name: directive.name}
-        var subregex = types[directive.type].regex
-        if (directive.multiple) {
-          subregex += `(?:${directive.separator || ','} *${subregex})*`
-          paramDef.process = processMultiple.bind(null, directive.type)
-        } else {
-          paramDef.process = types[directive.type].process
-        }
-        regex += '(' + subregex + ')'
-        parameters.push(paramDef)
-        break
-    }
-  }
-
-  return {regex, parameters}
-}
-
-const types = {
-  word: {
-    regex: `${unicodeLetter}+`,
-    process: x => x
-  },
-  words: {
-    regex: `(?: |${unicodeLetter})+`,
-    process: x => x
-  },
-  money: {
-    regex: '\\d+(?:[,.]\\d{2})?',
-    process: x => parseFloat(x.replace(',', '.'))
-  },
-  date: {
-    regex: '\\d{2}\\/\\d{2}\\/\\d{4}',
-    process: x => x.split('/').reverse().join('-')
-  }
-}
-
-const processMultiple = (type, matched) => {
-  var res = []
-  matched.replace(new RegExp(types[type].regex, 'g'), x => {
-    res.push(types[type].process(x))
-  })
-  return res
 }

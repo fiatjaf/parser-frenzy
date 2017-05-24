@@ -38,6 +38,7 @@
     "deepmerge": "^1.3.2",
     "fuzzyset": "0.0.4",
     "page": "^1.7.1",
+    "parsimmon": "^1.2.0",
     "pouch-replicate-webrtc": "github:fiatjaf/pouch-replicate-webrtc",
     "qs": "^6.4.0",
     "react": "^15.5.4",

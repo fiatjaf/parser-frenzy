@@ -1,7 +1,8 @@
 global.window = {}
 window.chevrotain = require('chevrotain')
 
-const {parseRule, makeLineParser} = require('./parser-parser')
+const {parseRule} = require('./parser-parser')
+const {makeLineParser} = require('./parser')
 const tape = require('tape')
 
 tape('parsing user-defined rule definitions', t => {
@@ -47,7 +48,7 @@ tape('parsing user-defined rule definitions', t => {
 })
 
 tape('parsing a line', t => {
-  var parseLine = makeLineParser([
+  var parser = makeLineParser([
     {kind: 'parameter', name: 'xu', type: 'word'},
     {kind: 'whitespace'},
     {kind: 'literal', string: 'banana'},
@@ -57,18 +58,16 @@ tape('parsing a line', t => {
   ])
 
   var line = 'açaí banana-boat'
-  t.deepEqual(parseLine(line), {xu: 'açaí'}, line)
-  line = ' açaí   banana   '
-  t.deepEqual(parseLine(line), {xu: 'açaí'}, line)
-  line = 'morangos com açúcar'
-  t.notOk(parseLine(line), line)
+  t.deepEqual(parser.tryParse(line), {xu: 'açaí'}, line)
+  line = 'açaí   banana'
+  t.deepEqual(parser.tryParse(line), {xu: 'açaí'}, line)
 
-  parseLine = makeLineParser([
+  parser = makeLineParser([
     {kind: 'literal', string: 'pag'},
     {kind: 'optional', alternatives: [
       [{kind: 'literal', string: 'agamento'}],
-      [{kind: 'literal', string: 'o'}],
-      [{kind: 'literal', string: 'ou'}]
+      [{kind: 'literal', string: 'ou'}],
+      [{kind: 'literal', string: 'o'}]
     ]},
     {kind: 'whitespace'},
     {kind: 'parameter', name: 'habitante', type: 'words'},
@@ -81,11 +80,11 @@ tape('parsing a line', t => {
   ])
 
   line = 'pag maria euzébia 525,30 em 13/12/2018'
-  t.deepEqual(parseLine(line), {habitante: 'maria euzébia', valor: 525.30, date: '2018-12-13'}, line)
+  t.deepEqual(parser.tryParse(line), {habitante: 'maria euzébia', valor: 525.30, date: '2018-12-13'}, line)
   line = 'pagou joana francisca 725,30 em 18/01/2019'
-  t.deepEqual(parseLine(line), {habitante: 'joana francisca', valor: 725.30, date: '2019-01-18'}, line)
+  t.deepEqual(parser.tryParse(line), {habitante: 'joana francisca', valor: 725.30, date: '2019-01-18'}, line)
 
-  parseLine = makeLineParser([
+  parser = makeLineParser([
     {kind: 'alternatives', alternatives: [
       [
         {kind: 'literal', string: 'débito:'},
@@ -101,7 +100,7 @@ tape('parsing a line', t => {
   ])
 
   line = 'débito: 18, 25,40'
-  t.deepEqual(parseLine(line), {'débito': [18, 25.40]}, line)
+  t.deepEqual(parser.tryParse(line), {'débito': [18, 25.40]}, line)
 
   t.end()
 })
@@ -110,9 +109,9 @@ tape('both things', t => {
   t.deepEqual(
     makeLineParser(
       parseRule(
-        'pac[iente] <pac:words>, dr[a|.|a.] <dent:words>, pag[ou|ou:|.|.:|:] <money> [dia <date>]'
+        'pac[iente] <pac:words>, dr[a][.] <dent:words>, pag[ou|.][:] <money> [dia <date>]'
       ).value
-    )('paciente beltrano josé, dra. mariana gastón, pagou: 600 dia 18/12/2001'), {
+    ).tryParse('paciente beltrano josé, dra. mariana gastón, pagou: 600 dia 18/12/2001'), {
       dent: 'mariana gastón',
       pac: 'beltrano josé',
       money: 600,
