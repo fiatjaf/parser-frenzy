@@ -5,39 +5,71 @@ const {parseRule, makeLineParser} = require('./parser-parser')
 const tape = require('tape')
 
 tape('parsing user-defined rule definitions', t => {
-  t.plan(1)
-  t.deepEqual(parseRule(' <word> banana[^@boat] (de|a)'), {
+  var rule = ' <word> banana[^@boat] (de|a)'
+  t.deepEqual(parseRule(rule), {
     value: [
-      {kind: 'whitespace'},
-      {kind: 'parameter', name: 'word', type: 'word'},
+      {kind: 'parameter', name: 'word', type: 'word', multiple: false},
       {kind: 'whitespace'},
       {kind: 'literal', string: 'banana'},
-      {kind: 'optional', alternatives: ['^@boat']},
+      {kind: 'optional', alternatives: [
+        [{kind: 'literal', string: '^@boat'}]
+      ]},
       {kind: 'whitespace'},
-      {kind: 'alternatives', alternatives: ['de', 'a']}
+      {kind: 'alternatives', alternatives: [
+        [{kind: 'literal', string: 'de'}],
+        [{kind: 'literal', string: 'a'}]
+      ]}
     ],
     lexErrors: [],
     parseErrors: []
-  })
+  }, rule)
+
+  rule = 'pagamentos: <pagamentos:money...> [em <date>]'
+  t.deepEqual(parseRule(rule), {
+    value: [
+      {kind: 'literal', string: 'pagamentos:'},
+      {kind: 'whitespace'},
+      {kind: 'parameter', name: 'pagamentos', type: 'money', multiple: true},
+      {kind: 'whitespace'},
+      {kind: 'optional', alternatives: [
+        [
+          {kind: 'literal', string: 'em'},
+          {kind: 'whitespace'},
+          {kind: 'parameter', name: 'date', type: 'date', multiple: false}
+        ]
+      ]}
+    ],
+    lexErrors: [],
+    parseErrors: []
+  }, rule)
+
+  t.end()
 })
 
 tape('parsing a line', t => {
-  t.plan(4)
-
   var parseLine = makeLineParser([
     {kind: 'parameter', name: 'xu', type: 'word'},
     {kind: 'whitespace'},
     {kind: 'literal', string: 'banana'},
-    {kind: 'optional', alternatives: ['-boat']}
+    {kind: 'optional', alternatives: [
+      [{kind: 'literal', string: '-boat'}]
+    ]}
   ])
 
-  t.deepEqual(parseLine('açaí banana-boat'), {xu: 'açaí'})
-  t.deepEqual(parseLine('açaí   banana'), {xu: 'açaí'})
-  t.notOk(parseLine('morangos com açúcar'))
+  var line = 'açaí banana-boat'
+  t.deepEqual(parseLine(line), {xu: 'açaí'}, line)
+  line = ' açaí   banana   '
+  t.deepEqual(parseLine(line), {xu: 'açaí'}, line)
+  line = 'morangos com açúcar'
+  t.notOk(parseLine(line), line)
 
   parseLine = makeLineParser([
     {kind: 'literal', string: 'pag'},
-    {kind: 'optional', alternatives: ['agamento', 'o', 'ou']},
+    {kind: 'optional', alternatives: [
+      [{kind: 'literal', string: 'agamento'}],
+      [{kind: 'literal', string: 'o'}],
+      [{kind: 'literal', string: 'ou'}]
+    ]},
     {kind: 'whitespace'},
     {kind: 'parameter', name: 'habitante', type: 'words'},
     {kind: 'whitespace'},
@@ -48,5 +80,45 @@ tape('parsing a line', t => {
     {kind: 'parameter', type: 'date', name: 'date'}
   ])
 
-  t.deepEqual(parseLine('pag maria euzébia 525,30 em 13/12/2018'), {habitante: 'maria euzébia', valor: '525,30', date: '13/12/2018'})
+  line = 'pag maria euzébia 525,30 em 13/12/2018'
+  t.deepEqual(parseLine(line), {habitante: 'maria euzébia', valor: 525.30, date: '2018-12-13'}, line)
+  line = 'pagou joana francisca 725,30 em 18/01/2019'
+  t.deepEqual(parseLine(line), {habitante: 'joana francisca', valor: 725.30, date: '2019-01-18'}, line)
+
+  parseLine = makeLineParser([
+    {kind: 'alternatives', alternatives: [
+      [
+        {kind: 'literal', string: 'débito:'},
+        {kind: 'whitespace'},
+        {kind: 'parameter', name: 'débito', type: 'money', multiple: true}
+      ],
+      [
+        {kind: 'literal', string: 'crédito:'},
+        {kind: 'whitespace'},
+        {kind: 'parameter', name: 'crédito', type: 'money', multiple: true}
+      ]
+    ]}
+  ])
+
+  line = 'débito: 18, 25,40'
+  t.deepEqual(parseLine(line), {'débito': [18, 25.40]}, line)
+
+  t.end()
+})
+
+tape('both things', t => {
+  t.deepEqual(
+    makeLineParser(
+      parseRule(
+        'pac[iente] <pac:words>, dr[a|.|a.] <dent:words>, pag[ou|ou:|.|.:|:] <money> [dia <date>]'
+      ).value
+    )('paciente beltrano josé, dra. mariana gastón, pagou: 600 dia 18/12/2001'), {
+      dent: 'mariana gastón',
+      pac: 'beltrano josé',
+      money: 600,
+      date: '2001-12-18'
+    }
+  )
+
+  t.end()
 })
