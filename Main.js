@@ -45,9 +45,9 @@ module.exports = createClass({
     this.cancel()
   },
 
-  componentWillUpdate () {
+  componentWillUpdate (nextProps, nextState) {
     let dbName = document.title.split(' :: ')[0]
-    document.title = `${dbName} :: ${this.state.route.component.displayName}`
+    document.title = `${dbName} :: ${nextState.route.component.displayName}`
   },
 
   render () {
