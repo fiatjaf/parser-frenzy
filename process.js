@@ -1,5 +1,4 @@
 const glua = window.glua
-const XRegExp = window.XRegExp
 
 const ref = require('./modifiers')
 
@@ -21,8 +20,10 @@ function process (fact, state) {
   let {_id, line} = fact
   for (let p = 0; p < rules.length; p++) {
     let rule = rules[p]
-    let match = XRegExp.exec(line, rule.regex)
-    if (match) {
+
+    try {
+      let match = rule.lineParser.tryParse(line)
+
       // keep track of which lines have matched
       rule.facts.push(fact)
 
@@ -40,6 +41,6 @@ function process (fact, state) {
 
         console.error(error)
       }
-    }
+    } catch (e) {}
   }
 }
