@@ -144,12 +144,12 @@ function grabRules () {
     .then(res => {
       for (let i = 0; i < res.rows.length; i++) {
         let {_id, _rev, pattern, code} = res.rows[i].doc
-        let {value: directives, lexErrors, parseErrors} = parseRule(pattern)
-        if (!lexErrors.length && !parseErrors.length) {
+        let {value: directives, parseErrors} = parseRule(pattern)
+        if (!parseErrors.length) {
           let lineParser = makeLineParser(directives)
           state.rules.unshift({_id, _rev, pattern, code, lineParser})
         } else {
-          state.rules.unshift({_id, _rev, pattern, code})
+          state.rules.unshift({_id, _rev, pattern, code, parseErrors})
         }
       }
     }),

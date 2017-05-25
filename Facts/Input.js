@@ -50,9 +50,9 @@ module.exports = createClass({
             ]),
             !opened && affected.length > 0 &&
               h('.column.is-narrow', [
-                h('a.tag.is-success', {
+                h('a.tag.is-info', {
                   onClick: e => this.open(_id, e),
-                  'data-balloon': `affected ${affected.length} points.`
+                  'data-balloon': `affected data in ${affected.length} place${affected.length === 1 ? '' : 's'}.`
                 }, affected.length)
               ]) || null,
             !opened && errors.length > 0 &&
@@ -76,7 +76,7 @@ module.exports = createClass({
           ]),
           opened && h('ul.affected', affected.map(({kind, at, val}) =>
             h('li', [
-              h('code', kind), ' at ',
+              h('span.tag.is-info', kind), ' at ',
               h('a', {href: `/browse/raw?at=${at.join('.')}`}, at.join('.')),
               ' with value ', h('code', JSON.stringify(val)), '.'
             ])

@@ -25,7 +25,7 @@ function process (fact, state) {
       let match = rule.lineParser.tryParse(line)
 
       // keep track of which lines have matched
-      rule.facts.push(fact)
+      rule.facts.push({...fact, data: match})
 
       try {
         glua.runWithModules(moduleMap, {

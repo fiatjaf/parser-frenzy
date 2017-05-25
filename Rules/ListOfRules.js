@@ -77,17 +77,29 @@ module.exports = createClass({
       ])
     ])
 
-    let renderRule = ({_id, _rev, pattern, code, facts, errors}, temp, opened, editing) =>
+    let renderRule = ({_id, _rev, pattern, code, parseErrors, facts, errors}, temp, opened, editing) =>
       h(`.card.rule.${opened ? 'open' : 'closed'}.${editing ? 'editing' : 'not-editing'}`, {key: _id}, [
         h('.card-header', [
           h('span.card-header-title', [
             `rule ${_id.split(':')[1]} `,
             !opened &&
+              parseErrors &&
+                h('a.tag.is-warning', {
+                  'data-balloon': "couldn't parse this rule.",
+                  onClick: e => this.toggleOpen(_id, e)
+                }, 'invalid') || null,
+            !opened &&
               facts.length > 0 &&
-                h('span.tag.is-info', {'data-balloon': `${facts.length} matched.`}, facts.length) || null,
+                h('a.tag.is-info', {
+                  'data-balloon': `${facts.length} facts matched.`,
+                  onClick: e => this.toggleOpen(_id, e)
+                }, facts.length) || null,
             !opened &&
               errors.length > 0 &&
-                h('span.tag.is-danger', {'data-balloon': `${errors.length} errored.`}, errors.length) || null
+                h('a.tag.is-danger', {
+                  'data-balloon': `${errors.length} errored.`,
+                  onClick: e => this.toggleOpen(_id, e)
+                }, errors.length) || null
           ]),
           h('a.card-header-icon', { onClick: e => this.toggleOpen(_id, e) }, [
             h('span.icon', [ h(`i.fa.fa-angle-${opened ? 'down' : 'up'}`) ])
@@ -112,20 +124,23 @@ module.exports = createClass({
               }
             })
           ]),
+          opened && parseErrors && h('.invalid', parseErrors.map(({message}) =>
+            h('p', [
+              h('span.tag.is-warning', 'pattern invalid'), ' ',
+              h('code', message)
+            ])
+          )) || null,
           opened && h('.facts', facts.map(fact =>
             h('p', [
-              h('span.tag.is-info', 'matched'),
-              ' ',
-              h('code', fact.line)
+              h('span.tag.is-info', 'matched'), ' ',
+              h('code', fact.line), ' yielding ',
+              h('span.tag.is-light', Object.keys(fact.data).map(k => `${k}:${fact.data[k]}`).join(' '))
             ])
           )) || null,
           opened && h('.errors', errors.map(({error, fact}) =>
             h('p', [
-              h('span.tag.is-danger', 'error'),
-              ' ',
-              h('code', error.message),
-              ' at ',
-              h('code', fact.line)
+              h('span.tag.is-danger', 'error'), ' ',
+              h('code', error.message), ' at ', h('code', fact.line)
             ])
           )) || null
         ]),
