@@ -22,7 +22,7 @@ const ELLIPSIS = createToken({name: 'ELLIPSIS', pattern: /â€¦|\.\.\./, label: 'â
 const COLON = createToken({name: 'COLON', pattern: /:/, label: ':'})
 const DIRECTIVE = createToken({
   name: 'DIRECTIVE',
-  pattern: /words|word|money|date/,
+  pattern: /words|word|numberword|money|date|number/,
   label: 'directive'
 })
 const VERTICALBAR = createToken({name: 'VERTICALBAR', pattern: /|/, label: '|'})
