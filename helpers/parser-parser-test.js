@@ -119,5 +119,17 @@ tape('both things', t => {
     }
   )
 
+  t.deepEqual(
+    makeLineParser(
+      parseRule(
+        '<someone:word> [has] paid <money> [on <date>]'
+      ).value
+    ).tryParse('someone has paid 12 on 23/11/2019'), {
+      someone: 'someone',
+      money: 12,
+      date: '2019-11-23'
+    }
+  )
+
   t.end()
 })

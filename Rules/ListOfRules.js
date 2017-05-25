@@ -57,7 +57,7 @@ module.exports = createClass({
               value: this.state.newpattern,
               onChange: e => this.setState({newpattern: e.target.value}),
               'data-balloon': 'a valid Javascript regex pattern',
-              placeholder: `\\w{2,5}: +\\d\\d(,\\d\\d)?`
+              placeholder: '<someone:word> [has] paid <value:money> on <date>'
             })
           ]),
           h('div.control', [

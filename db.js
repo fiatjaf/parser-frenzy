@@ -1,10 +1,11 @@
 const PouchDB = window.PouchDB
 const Emitter = require('tiny-emitter')
 const cuid = require('cuid')
-const XRegExp = window.XRegExp
 const debounce = require('debounce')
 
 const log = require('./log')
+const {parseRule} = require('./helpers/parser-parser')
+const {makeLineParser} = require('./helpers/parser')
 const process = require('./process')
 
 const emitter = new Emitter()
@@ -143,8 +144,13 @@ function grabRules () {
     .then(res => {
       for (let i = 0; i < res.rows.length; i++) {
         let {_id, _rev, pattern, code} = res.rows[i].doc
-        let regex = XRegExp(pattern)
-        state.rules.unshift({_id, _rev, pattern, code, regex})
+        let {value: directives, lexErrors, parseErrors} = parseRule(pattern)
+        if (!lexErrors.length && !parseErrors.length) {
+          let lineParser = makeLineParser(directives)
+          state.rules.unshift({_id, _rev, pattern, code, lineParser})
+        } else {
+          state.rules.unshift({_id, _rev, pattern, code})
+        }
       }
     }),
     state.db.allDocs({startkey: 'mod:', endkey: 'mod:~', include_docs: true})
