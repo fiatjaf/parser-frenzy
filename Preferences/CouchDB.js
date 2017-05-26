@@ -13,7 +13,7 @@ module.exports = createClass({
       settings: {},
 
       editingCouch: '',
-
+      log: [],
       syncing: false
     }
   },
@@ -49,7 +49,15 @@ module.exports = createClass({
         }, this.state.syncing
           ? 'Syncing...'
           : 'Sync!'
-        )
+        ),
+        h('table.table', [
+          h('tbody', this.state.log.map((msg, i) =>
+            h('tr', [
+              h('td', i),
+              h('td', msg)
+            ])
+          ).reverse())
+        ])
       ])
     )
   },
@@ -59,14 +67,30 @@ module.exports = createClass({
     this.setState({syncing: true})
     log.info('Starting replication...')
     PouchDB.sync(this.state.db, this.state.settings.couch)
+      .on('paused', e => this.log('replication was paused.', e))
+      .on('active', () => this.log('replication started.'))
+      .on('denied', e => this.log('replication denied due to insufficient permissions', e))
+      .on('change', info => this.log('got a change.', info))
       .on('complete', info => {
-        console.log('replication complete.', info)
+        this.log(
+          `replication completed.
+          sent ${info.push.docs_written} docs, got ${info.pull.docs_written}.`,
+        info)
         log.success('Replication complete!')
         this.setState({syncing: false})
       })
       .on('error', e => {
-        log.debug(e)
+        this.log('replication error.', e)
+        log.error(e)
         this.setState({syncing: false})
       })
+  },
+
+  log () {
+    console.log.apply(console, arguments)
+    this.setState(st => {
+      st.log.push(arguments[0])
+      return st
+    })
   }
 })

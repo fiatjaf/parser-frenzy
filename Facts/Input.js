@@ -34,10 +34,60 @@ module.exports = createClass({
   },
 
   render () {
-    let renderFact = ({line, _id, _rev, affected, errors}, opened, editing) =>
-      h('.card.fact', {key: _id}, [
+    let renderFact = ({line, _id, _rev, rules}, opened, editing) => {
+      var tags = []
+      var runInfo = []
+
+      if (rules.length) {
+        var count = {affected: 0, errors: 0}
+        for (let i = 0; i < rules.length; i++) {
+          let {ruleId, pattern, data, affected, error} = rules[i]
+          count.affected += affected.length
+          count.errors += error ? 1 : 0
+
+          runInfo.push(
+            h('div', [
+              h('p', [
+                h('span.tag.is-info', 'matched'), ' ',
+                h('a', {href: `/rules/rules?rule=${ruleId}`}, [ h('code', pattern) ]), ' yielding ',
+                h('span.tag.is-dark', Object.keys(data).map(k => `${k}:${data[k]}`).join(' '))
+              ]),
+              h('dl', affected.map(({kind, at, val}) =>
+                h('dd', [
+                  h('span.tag.is-info', kind), ' at ',
+                  h('a', {href: `/browse/raw?at=${at.join('.')}`}, at.join('.')),
+                  ' with value ', h('code', JSON.stringify(val)), '.'
+                ])
+              ).concat(
+                error && h('dd', [
+                  'error ', h('code', error.message)
+                ])
+              ))
+            ])
+          )
+        }
+
+        tags.push(
+          h('a.tag.is-info', {
+            'data-balloon': `matched ${rules.length} rule${rules.length === 1 ? '' : 's'}`
+          }, rules.length)
+        )
+        tags.push(
+          h('a.tag.is-success', {
+            'data-balloon': `affected data in ${count.affected} place${count.affected === 1 ? '' : 's'}.`
+          }, count.affected)
+        )
+        count.errors.length && tags.push(
+          h('a.tag.is-danger', {
+            'data-balloon': `raised an error in ${count.errors} place${count.errors === 1 ? '' : 's'}.`
+          }, count.errors)
+        )
+      }
+
+      return h('.card.fact', {key: _id}, [
         h('.card-content', [
           h('.columns.is-mobile', [
+            opened ? null : h('.column.is-narrow', {onClick: e => this.open(_id, e)}, tags),
             h('.column', [
               editing
               ? h('.control', [
@@ -48,22 +98,8 @@ module.exports = createClass({
               ])
               : line
             ]),
-            !opened && affected.length > 0 &&
-              h('.column.is-narrow', [
-                h('a.tag.is-info', {
-                  onClick: e => this.open(_id, e),
-                  'data-balloon': `affected data in ${affected.length} place${affected.length === 1 ? '' : 's'}.`
-                }, affected.length)
-              ]) || null,
-            !opened && errors.length > 0 &&
-              h('.column.is-narrow', [
-                h('a.tag.is-danger', {
-                  onClick: e => this.open(_id, e),
-                  'data-balloon': `${errors.length} errors.`
-                }, errors.length)
-              ]) || null,
             h('.column.is-narrow.date', dateFormat(_id)),
-            !opened && affected.length === 0 && errors.length === 0 &&
+            !opened && tags.length === 0 &&
               h('.column.is-narrow', [
                 h('a', {
                   onClick: e => this.open(_id, e)
@@ -74,19 +110,7 @@ module.exports = createClass({
                 h('a', {onClick: this.close}, h('span.icon', [ h('i.fa.fa-angle-down') ]))
               ]) || null
           ]),
-          opened && h('ul.affected', affected.map(({kind, at, val}) =>
-            h('li', [
-              h('span.tag.is-info', kind), ' at ',
-              h('a', {href: `/browse/raw?at=${at.join('.')}`}, at.join('.')),
-              ' with value ', h('code', JSON.stringify(val)), '.'
-            ])
-          )) || null,
-          opened && h('ul.errors', errors.map(({error, rule}) =>
-            h('li', [
-              'error ', h('code', error.message), ' on rule ',
-              h('a', {href: `/rules/rules?rule=${rule._id}`}, rule.pattern), '.'
-            ])
-          )) || null
+          ...opened ? runInfo : null
         ]),
         opened && h('.card-footer', [
           h('.card-footer-item', [
@@ -101,6 +125,7 @@ module.exports = createClass({
           ])
         ]) || null
       ])
+    }
 
     return (
       h('#Input', [

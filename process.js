@@ -6,8 +6,7 @@ module.exports = process
 
 function process (fact, state) {
   // cleanup affected paths and errors
-  fact.affected = []
-  fact.errors = []
+  fact.rules = []
 
   let {rules, modules} = state
 
@@ -25,19 +24,25 @@ function process (fact, state) {
       let match = rule.lineParser.tryParse(line)
 
       // keep track of which lines have matched
-      rule.facts.push({...fact, data: match})
+      rule.facts.push({line: fact.line, data: match})
+
+      let affected = []
+      fact.rules.push({
+        ruleId: rule._id, pattern: rule.pattern,
+        data: match, affected, error: null
+      })
 
       try {
         glua.runWithModules(moduleMap, {
           timestamp: parseInt(_id.split(':')[1]),
           line,
           match,
-          data: ref(state, ['store'], fact.affected, [])
+          data: ref(state, ['store'], affected, [])
         }, rule.code)
       } catch (error) {
         // keep track of where errors are happenning
-        fact.errors.push({error, rule})
-        rule.errors.push({error, fact})
+        fact.error = {error: error.message, ruleId: rule._id, pattern: rule.pattern}
+        rule.errors.push({error: error.message, line: fact.line})
 
         console.error(error)
       }

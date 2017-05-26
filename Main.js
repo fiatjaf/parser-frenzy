@@ -30,7 +30,7 @@ module.exports = createClass({
 
     page('/', '/facts/input')
     page('*', (ctx, next) => {
-      ctx.query = qs.parse(location.search.slice(1))
+      ctx.query = qs.parse(ctx.querystring)
       next()
     })
 

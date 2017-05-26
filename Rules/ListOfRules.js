@@ -77,7 +77,10 @@ module.exports = createClass({
       ])
     ])
 
-    let renderRule = ({_id, _rev, pattern, code, parseErrors, facts, errors}, temp, opened, editing) =>
+    let renderRule = (
+      {_id, _rev, pattern, code, parseErrors, facts, errors},
+      temp, opened, editing
+    ) =>
       h(`.card.rule.${opened ? 'open' : 'closed'}.${editing ? 'editing' : 'not-editing'}`, {key: _id}, [
         h('.card-header', [
           h('span.card-header-title', [
@@ -124,23 +127,23 @@ module.exports = createClass({
               }
             })
           ]),
-          opened && parseErrors && h('.invalid', parseErrors.map(({message}) =>
+          opened && parseErrors && h('div', parseErrors.map(({message}) =>
             h('p', [
               h('span.tag.is-warning', 'pattern invalid'), ' ',
               h('code', message)
             ])
           )) || null,
-          opened && h('.facts', facts.map(fact =>
+          opened && h('div', facts.map(({line, data}) =>
             h('p', [
               h('span.tag.is-info', 'matched'), ' ',
-              h('code', fact.line), ' yielding ',
-              h('span.tag.is-light', Object.keys(fact.data).map(k => `${k}:${fact.data[k]}`).join(' '))
+              h('code', line), ' yielding ',
+              h('span.tag.is-dark', Object.keys(data).map(k => `${k}:${data[k]}`).join(' '))
             ])
           )) || null,
-          opened && h('.errors', errors.map(({error, fact}) =>
+          opened && h('div', errors.map(({error, line}) =>
             h('p', [
               h('span.tag.is-danger', 'error'), ' ',
-              h('code', error.message), ' at ', h('code', fact.line)
+              h('code', error), ' at ', h('code', line)
             ])
           )) || null
         ]),
