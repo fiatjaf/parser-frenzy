@@ -98,17 +98,9 @@ module.exports = createClass({
               ])
               : line
             ]),
-            h('.column.is-narrow.date', dateFormat(_id)),
-            !opened && tags.length === 0 &&
-              h('.column.is-narrow', [
-                h('a', {
-                  onClick: e => this.open(_id, e)
-                }, h('span.icon', [ h('i.fa.fa-angle-up') ]))
-              ]) || null,
-            opened &&
-              h('.column.is-narrow', [
-                h('a', {onClick: this.close}, h('span.icon', [ h('i.fa.fa-angle-down') ]))
-              ]) || null
+            h('.column.is-narrow.date', [
+              h('a', {onClick: e => opened ? this.close(e) : this.open(_id, e)}, dateFormat(_id))
+            ])
           ]),
           ...opened ? runInfo : null
         ]),
