@@ -26,7 +26,7 @@
     "type": "git",
     "url": "git+https://github.com/fiatjaf/parser-frenzy.git"
   },
-  "author": "Giovanni T. Parra",
+  "author": "fiatjaf",
   "license": "ISC",
   "homepage": "https://github.com/fiatjaf/parser-frenzy#readme",
   "dependencies": {
