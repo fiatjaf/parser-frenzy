@@ -1,58 +1,36 @@
-const createClass = require('create-react-class')
+const R = require('ramda')
 const h = require('react-hyperscript')
 
+const state = require('../state')
+const subroute = state.view(['route', 'subroute'])
+
 module.exports = (name, children) =>
-  createClass({
-    displayName: name,
-    getInitialState () {
-      return {
-        selected: children[0][1]
-      }
-    },
+  function SubRouter (props) {
+    let basepath = props.pathname.split('/').slice(0, -1).join('/')
+    let cmp = children[0][1]
+    subroute
+      .filter(s => s)
+      .onValue(s => {
+        cmp = R.find(c => c[0] === s, children)[1]
+      })
 
-    componentWillMount () {
-      let sub = this.props.pathname.split('/')[2]
-      if (sub) {
-        this.select(sub)
-      }
-    },
-
-    componentWillReceiveProps (nextProps) {
-      let sub = nextProps.pathname.split('/')[2]
-      if (sub) {
-        this.select(sub)
-      }
-    },
-
-    select (sub) {
-      for (let i = 0; i < children.length; i++) {
-        let [subpath, component] = children[i]
-        if (subpath === sub) {
-          this.setState({selected: component})
-          return
-        }
-      }
-    },
-
-    render () {
-      let basepath = this.props.pathname.split('/')[1]
-
-      return (
-        h('#' + name, [
-          h('.tabs.is-centered', [
-            h('ul', children.map(([subpath, component, tabTitle, hint]) =>
-              h('li', {className: this.state.selected === component ? 'is-active' : null}, [
-                h('a', {
-                  'data-balloon': hint,
-                  'data-balloon-pos': 'left',
-                  'data-balloon-length': 'large',
-                  href: `/${basepath}/${subpath}`
-                }, tabTitle)
-              ])
-            ))
-          ]),
-          h(this.state.selected, this.props)
-        ])
-      )
-    }
-  })
+    return (
+      h('#' + name, [
+        h('.tabs.is-centered', [
+          h('ul', children.map(([subpath, component, tabTitle, hint]) =>
+            h('li', {
+              className: subroute.map(s => s === subpath ? 'is-active' : null)
+            }, [
+              h('a', {
+                'data-balloon': hint,
+                'data-balloon-pos': 'left',
+                'data-balloon-length': 'large',
+                href: `/${basepath}/${subpath}`
+              }, tabTitle)
+            ])
+          ))
+        ]),
+        h(cmp)
+      ])
+    )
+  }

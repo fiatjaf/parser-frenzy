@@ -4,3 +4,4 @@ node_modules
 npm-debug.log
 browserify-cache.json
 bundle.*
+package-lock.json

@@ -1,5 +1,3 @@
-const glua = window.glua
-
 const ref = require('./modifiers')
 
 module.exports = process

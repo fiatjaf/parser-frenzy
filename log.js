@@ -31,7 +31,7 @@ module.exports = {
     notie.alert({
       text: Array.prototype.join.call(arguments, ' '),
       type: 'success',
-      time: 4
+      time: 3
     })
   },
 

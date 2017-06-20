@@ -1,212 +1,177 @@
-const createClass = require('create-react-class')
 const h = require('react-hyperscript')
+const cuid = require('cuid')
+const L = require('partial.lenses')
+const R = require('ramda')
 
-const {onStateChange} = require('../db')
 const log = require('../log')
 const dateFormat = require('../helpers/date').asLongAsNeeded
 
-module.exports = createClass({
-  displayName: 'Input',
-  getInitialState () {
-    return {
-      db: null,
-      facts: [],
-      checkpoint: null,
+const state = require('../state')
+const facts = state.view('facts')
 
-      opened: null,
-      editing: null,
-      tempValues: {},
+module.exports = function Input () {
+  const addFact = (e) => {
+    e.preventDefault()
+    let db = state.view('db').get()
+    let line = facts.view('adding').get()
+    db.put({
+      _id: `f:${cuid.slug()}`,
+      line
+    })
+      .then(R.call(log.success, 'Fact added.'))
+  }
 
-      input: '',
-      preview: null
-    }
-  },
+  const removeFact = R.partial((fact) => {
+    log.confirm(`Delete "${fact.line}" forever?`, () => {
+      let db = state.view('db').get()
+      db.remove(fact)
+        .then(R.call(log.success, 'Fact removed.'))
+    })
+  })
 
-  componentDidMount () {
-    this.cancel = onStateChange(
-      ({facts, checkpoint, db}) => this.setState({facts, checkpoint, db}),
-      ['facts', 'checkpoint', 'db']
-    )
-  },
+  const updateFact = R.partial((fact, values) => {
+    let db = state.view('db').get()
+    db.put({fact, ...values})
+      .then(R.call(log.success, 'Fact updated.'))
+      .then(R.call(facts.modify, L.set('editing', null)))
+  })
 
-  componentWillUnmount () {
-    this.cancel()
-  },
-
-  render () {
-    let renderFact = ({line, _id, _rev, rules}, opened, editing) => {
-      var tags = []
-      var runInfo = []
-
-      if (rules.length) {
-        var count = {affected: 0, errors: 0}
-        for (let i = 0; i < rules.length; i++) {
-          let {ruleId, pattern, data, affected, error} = rules[i]
-          count.affected += affected.length
-          count.errors += error ? 1 : 0
-
-          runInfo.push(
-            h('div', [
-              h('p', [
-                h('span.tag.is-info', 'matched'), ' ',
-                h('a', {href: `/rules/rules?rule=${ruleId}`}, [ h('code', pattern) ]), ' yielding ',
-                h('span.tag.is-dark', Object.keys(data).map(k => `${k}:${data[k]}`).join(' '))
-              ]),
-              h('dl', affected.map(({kind, at, val}) =>
-                h('dd', [
-                  h('span.tag.is-info', kind), ' at ',
-                  h('a', {href: `/browse/raw?at=${at.join('.')}`}, at.join('.')),
-                  ' with value ', h('code', JSON.stringify(val)), '.'
-                ])
-              ).concat(
-                error && h('dd', [
-                  'error ', h('code', error.message)
-                ])
-              ))
-            ])
-          )
-        }
-
-        tags.push(
-          h('a.tag.is-info', {
-            'data-balloon': `matched ${rules.length} rule${rules.length === 1 ? '' : 's'}`
-          }, rules.length)
+  return (
+    h('#Input', [
+      h('.preview', null), // state.input.adding.preview),
+      h('form.add', {onSubmit: addFact}, [
+        h('.field.has-addons', [
+          h('.control.is-expanded', [
+            h('input.input', {
+              onChange (e) { facts.modify(L.set('adding', e.target.value)) },
+              value: state.view(['adding'])
+            })
+          ]),
+          h('.control', [
+            h('button.button.is-primary', {type: 'submit'}, 'Add')
+          ])
+        ])
+      ]),
+      h('div', facts.view(['list', L.defaults([])]).map(facts => facts
+        .map(f =>
+          h(Fact, {
+            key: f._id,
+            fact: f,
+            remove: removeFact([f]),
+            update: updateFact([f])
+          })
         )
-        tags.push(
-          h('a.tag.is-success', {
-            'data-balloon': `affected data in ${count.affected} place${count.affected === 1 ? '' : 's'}.`
-          }, count.affected)
-        )
-        count.errors.length && tags.push(
-          h('a.tag.is-danger', {
-            'data-balloon': `raised an error in ${count.errors} place${count.errors === 1 ? '' : 's'}.`
-          }, count.errors)
-        )
-      }
+      ))
+    ])
+  )
+}
 
-      return h('.card.fact', {key: _id}, [
-        h('.card-content', [
-          h('.columns.is-mobile', [
-            opened ? null : h('.column.is-narrow', {onClick: e => this.open(_id, e)}, tags),
-            h('.column', [
-              editing
+function Fact ({fact, remove, update}) {
+  let {_id, line} = fact
+  const temp = facts.view(['tempValues', _id, L.defaults(fact)])
+
+  var tags = []
+  var runInfo = []
+
+  // if (rules.length) {
+  //   var count = {affected: 0, errors: 0}
+  //   for (let i = 0; i < rules.length; i++) {
+  //     let {ruleId, pattern, data, affected, error} = rules[i]
+  //     count.affected += affected.length
+  //     count.errors += error ? 1 : 0
+
+  //     runInfo.push(
+  //       h('div', [
+  //         h('p', [
+  //           h('span.tag.is-info', 'matched'), ' ',
+  //           h('a', {href: `/rules/rules?rule=${ruleId}`}, [ h('code', pattern) ]), ' yielding ',
+  //           h('span.tag.is-dark', Object.keys(data).map(k => `${k}:${data[k]}`).join(' '))
+  //         ]),
+  //         h('dl', affected.map(({kind, at, val}) =>
+  //           h('dd', [
+  //             h('span.tag.is-info', kind), ' at ',
+  //             h('a', {href: `/browse/raw?at=${at.join('.')}`}, at.join('.')),
+  //             ' with value ', h('code', JSON.stringify(val)), '.'
+  //           ])
+  //         ).concat(
+  //           error && h('dd', [
+  //             'error ', h('code', error.message)
+  //           ])
+  //         ))
+  //       ])
+  //     )
+  //   }
+
+  //   tags.push(
+  //     h('a.tag.is-info', {
+  //       'data-balloon': `matched ${rules.length} rule${rules.length === 1 ? '' : 's'}`
+  //     }, rules.length)
+  //   )
+  //   tags.push(
+  //     h('a.tag.is-success', {
+  //       'data-balloon': `affected data in ${count.affected} place${count.affected === 1 ? '' : 's'}.`
+  //     }, count.affected)
+  //   )
+  //   count.errors.length && tags.push(
+  //     h('a.tag.is-danger', {
+  //       'data-balloon': `raised an error in ${count.errors} place${count.errors === 1 ? '' : 's'}.`
+  //     }, count.errors)
+  //   )
+  // }
+
+  return (
+    h('.card.fact', [
+      h('.card-content', [
+        h('.columns.is-mobile', [
+          facts.view('opened').map(opened => opened === _id
+            ? null
+            : h('.column.is-narrow', {
+              onClick (e) { facts.modify(L.set('opened', _id)) }
+            }, tags)
+          ),
+          h('.column', [
+            facts.view('editing').map(editing => editing === _id
               ? h('.control', [
                 h('input.input', {
-                  onChange: e => this.changed('line', _id, e.target.value),
-                  value: this.state.tempValues[_id].line
+                  onChange (e) { temp.modify(L.set('line', e.target.value)) },
+                  value: temp.view('line')
                 })
               ])
               : line
-            ]),
-            h('.column.is-narrow.date', [
-              h('a', {onClick: e => opened ? this.close(e) : this.open(_id, e)}, dateFormat(_id))
-            ])
+            )
           ]),
-          ...opened ? runInfo : null
+          h('.column.is-narrow.date', [
+            h('a', {
+              onClick (e) {
+                facts.modify(L.modify('opened', opened => opened === _id ? null : _id))
+              }
+            }, dateFormat(_id))
+          ])
         ]),
-        opened && h('.card-footer', [
+        h('div', facts.view('opened').map(opened => opened === _id ? runInfo : null))
+      ]),
+      facts.view(L.pick({opened: 'opened', editing: 'editing'}))
+        .map(({opened, editing}) => opened === _id
+        ? h('.card-footer', [
           h('.card-footer-item', [
-            h('a', {onClick: e => this.remove(line, _id, _rev, e)}, 'Delete')
+            h('a', { onClick: remove }, 'Delete')
           ]),
-          editing
-          ? h('.card-footer-item', [
-            h('a', {onClick: e => this.saveEdits(_id, _rev, e)}, 'Save')
-          ])
-          : h('.card-footer-item', [
-            h('a', {onClick: e => this.startEditing(_id, line, e)}, 'Edit')
-          ])
-        ]) || null
-      ])
-    }
-
-    return (
-      h('#Input', [
-        h('.preview', this.state.preview),
-        h('form.add', {onSubmit: this.save}, [
-          h('.field.has-addons', [
-            h('.control.is-expanded', [
-              h('input.input', {
-                onChange: e => { this.setState({input: e.target.value}) },
-                value: this.state.input
-              })
-            ]),
-            h('.control', [
-              h('button.button.is-primary', {type: 'submit'}, 'Add')
+          editing === _id
+            ? h('.card-footer-item', [
+              temp.map(t =>
+                h('a', {
+                  onClick (e) { update(t) }
+                }, 'Save')
+              )
             ])
-          ])
-        ]),
-        h('div', this.state.facts.map(f =>
-          renderFact(f, this.state.opened === f._id, this.state.editing === f._id)
-        ))
-      ])
-    )
-  },
-
-  save (e) {
-    e.preventDefault()
-    this.state.db.put({
-      _id: `f:${parseInt((new Date).getTime() / 1000)}`,
-      line: this.state.input
-    })
-    .then(() => {
-      log.info('added.')
-      this.setState({input: '', preview: null})
-    })
-    .catch(log.error)
-  },
-
-  remove (line, _id, _rev, e) {
-    e.preventDefault()
-    log.confirm(`Are you sure you want to delete the line "${line}"?`, () =>
-      this.state.db.remove(_id, _rev)
-      .then(() => log.info(`removed ${_id}.`))
-      .then(() => this.forceUpdate())
-      .catch(log.error)
-    )
-  },
-
-  open (_id, e) {
-    e.preventDefault()
-    this.setState({opened: _id, editing: null})
-  },
-
-  close (e) {
-    e.preventDefault()
-    this.setState({opened: null, editing: null})
-  },
-
-  startEditing (_id, line, e) {
-    e.preventDefault()
-    this.setState(st => {
-      st.editing = _id
-      st.tempValues[_id] = {line}
-      return st
-    })
-  },
-
-  changed (what, _id, val) {
-    this.setState(st => {
-      st.tempValues[_id][what] = val
-      return st
-    })
-  },
-
-  saveEdits (_id, _rev, e) {
-    e.preventDefault()
-    let temp = this.state.tempValues[_id]
-    this.state.db.put({
-      _id,
-      _rev,
-      line: temp.line
-    })
-    .then(() => {
-      log.info('line updated.')
-      this.setState(st => {
-        delete st.tempValues[_id]
-        st.editing = null
-        return st
-      })
-    })
-    .catch(log.error)
-  }
-})
+            : h('.card-footer-item', [
+              h('a', {
+                onClick (e) { facts.modify(L.set('editing', _id)) }
+              }, 'Edit')
+            ])
+        ])
+        : null
+      )
+    ])
+  )
+}
