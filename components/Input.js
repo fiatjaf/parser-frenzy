@@ -19,13 +19,15 @@ module.exports = function Input () {
       line
     })
       .then(R.call(log.success, 'Fact added.'))
+      .catch(log.error)
   }
 
   const removeFact = R.partial((fact) => {
     log.confirm(`Delete "${fact.line}" forever?`, () => {
       let db = state.view('db').get()
       db.remove(fact)
-        .then(R.call(log.success, 'Fact removed.'))
+        .then(R.call(log.info, 'Fact removed.'))
+        .catch(log.error)
     })
   })
 
@@ -34,6 +36,7 @@ module.exports = function Input () {
     db.put({fact, ...values})
       .then(R.call(log.success, 'Fact updated.'))
       .then(R.call(facts.modify, L.set('editing', null)))
+      .catch(log.error)
   })
 
   return (

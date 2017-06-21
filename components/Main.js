@@ -1,6 +1,8 @@
 const h = require('react-hyperscript')
 
-const state = require('./state')
+const state = require('../state')
+const components = require('./index')
+const SubRouter = require('./SubRouter')
 
 module.exports = function Main () {
   return (
@@ -12,17 +14,13 @@ module.exports = function Main () {
             ? ch.name
             : 'parser-frenzy'))
         ]),
-        h('.nav-center', [
-          h('a.nav-item', {href: '/facts/'}, 'facts'),
-          h('a.nav-item', {href: '/rules/'}, 'rules'),
-          h('a.nav-item', {href: '/browse/'}, 'browse')
-        ])
+        h('.nav-center', Array.from(components.keys())
+          .map(route => h('a.nav-item', {href: `/${route}/`}, route))
+        )
       ]),
       h('main.columns', [
         h('.column.is-10.is-offset-1', [
-          state.view('route').map(({component, props}) =>
-            h(component, props)
-          )
+          h(SubRouter)
         ])
       ])
     ])

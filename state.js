@@ -15,8 +15,8 @@ const initial = {
   chosen: null,
   db: null,
   route: {
-    component: 'div',
-    subroute: null,
+    route: 'facts',
+    subroute: 'input',
     props: null
   },
   facts: {
@@ -24,6 +24,21 @@ const initial = {
     opened: null,
     list: [],
     tempValues: {}
+  },
+  rules: {
+    list: []
+  },
+  checkpoints: {
+    typed: '',
+    parsed: null,
+    opened: null,
+    list: []
+  },
+  modules: {
+    list: []
+  },
+  views: {
+    list: []
   }
 }
 let chosen = databases.current()
@@ -45,14 +60,14 @@ page('*', (ctx, next) => {
 page('/', '/facts/input')
 page('/:route/', ctx => {
   state.modify(L.set('route', {
-    component: require('./' + ctx.params.route[0].toUpperCase() + ctx.params.route.slice(1)),
-    subroute: null,
+    route: ctx.params.route,
+    subroute: ctx.params.subroute,
     props: ctx
   }))
 })
 page('/:route/:subroute', ctx =>
   state.modify(L.set('route', {
-    component: require('./' + ctx.params.route),
+    route: ctx.params.route,
     subroute: ctx.params.subroute,
     props: ctx
   }))
@@ -64,15 +79,35 @@ page({hashbang: true})
 state.view('db').onValue(db => {
   db.changes({include_docs: true, live: true})
     .on('change', change => {
+      var doc = change.doc
+      if (change.doc._deleted) doc = undefined
+      var prop
+
       if (change.doc._id.slice(0, 2) === 'f:') {
-        var doc = change.doc
-        if (change.doc._deleted) doc = undefined
-        state.modify(L.set([
-          'facts', 'list', L.defaults([]),
-          L.normalize(R.compose(R.reverse, R.sortBy(R.prop('_id')))),
-          L.find(R.whereEq({_id: change.doc._id}))
-        ], doc))
+        prop = 'facts'
+      } else if (change.doc._id.slice(0, 5) === 'rule:') {
+        prop = 'rules'
+      } else if (change.doc._id.slice(0, 4) === 'chk:') {
+        prop = 'checkpoints'
+      } else if (change.doc._id.slice(0, 2) === 'v:') {
+        prop = 'views'
+      } else if (change.doc._id.slice(0, 4) === 'mod:') {
+        prop = 'modules'
+      } else {
+        console.log(change)
+        return
       }
+
+      var lens = [
+        prop,
+        'list',
+        L.defaults([]),
+        L.normalize(R.compose(R.reverse, R.sortBy(R.prop('_id')))),
+        L.find(R.whereEq({_id: change.doc._id}))
+      ]
+
+      // append, update or remove the doc from the correct place in the tree
+      state.modify(L.set(lens, doc))
     })
 })
 /***********/
@@ -149,8 +184,3 @@ state.view('db').onValue(db => {
 //    })
 //  })
 //}
-
-// require('./Preferences')
-require('./Facts')
-// require('./Rules')
-// require('./Browse')

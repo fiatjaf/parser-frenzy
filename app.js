@@ -3,7 +3,7 @@ const render = require('react-dom').render
 
 window.xtend = require('xtend')
 
-const Main = require('./Main')
+const Main = require('./components/Main')
 
 render(
   React.createElement(Main),
