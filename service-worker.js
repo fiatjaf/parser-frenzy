@@ -41,6 +41,7 @@ this.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return
+  if (event.request.url.slice(0, 4) !== 'http') return
 
   // for the predefined urls we'll always serve them from the cache
   if (always.indexOf(event.request.url) !== -1) {

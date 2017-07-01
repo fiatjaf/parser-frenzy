@@ -1,4 +1,4 @@
-const h = require('react-hyperscript')
+const h = require('karet-hyperscript')
 const R = require('ramda')
 const L = require('partial.lenses')
 

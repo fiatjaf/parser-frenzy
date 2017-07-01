@@ -1,49 +1,61 @@
-const ref = require('./modifiers')
+// const ref = require('./modifiers')
+const L = require('partial.lenses')
+const R = require('ramda')
 
 module.exports = process
 
-function process (fact, state) {
+function process (fact, rules, parsers, data) {
   // cleanup affected paths and errors
-  fact.rules = []
-
-  let {rules, modules} = state
-
-  var moduleMap = {}
-  for (let i = 0; i < modules.length; i++) {
-    let mod = modules[i]
-    moduleMap[mod._id.split(':')[1]] = mod.code
-  }
+  // fact.rules = []
 
   let {_id, line} = fact
+  var updateddata = data
   for (let p = 0; p < rules.length; p++) {
     let rule = rules[p]
+    let parser = parsers[p]
 
     try {
-      let match = rule.lineParser.tryParse(line)
+      let match = parser.tryParse(line)
 
       // keep track of which lines have matched
-      rule.facts.push({line: fact.line, data: match})
+      // rule.facts.push({line: fact.line, data: match})
 
-      let affected = []
-      fact.rules.push({
-        ruleId: rule._id, pattern: rule.pattern,
-        data: match, affected, error: null
-      })
+      // let affected = []
+      // fact.rules.push({
+      //   ruleId: rule._id, pattern: rule.pattern,
+      //   data: match, affected, error: null
+      // })
 
       try {
-        glua.runWithModules(moduleMap, {
+        updateddata = evalCode(rule.code, {
           timestamp: parseInt(_id.split(':')[1]),
           line,
           match,
-          data: ref(state, ['store'], affected, [])
-        }, rule.code)
+          data: updateddata,
+          L,
+          R
+        })(updateddata)
       } catch (error) {
         // keep track of where errors are happenning
-        fact.error = {error: error.message, ruleId: rule._id, pattern: rule.pattern}
-        rule.errors.push({error: error.message, line: fact.line})
+        // fact.error = {error: error.message, ruleId: rule._id, pattern: rule.pattern}
+        // rule.errors.push({error: error.message, line: fact.line})
 
-        console.error(error)
+        console.error('evalCode error', error)
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error('failed to parse', line, 'with', rule.pattern, ':', e)
+    }
   }
+
+  return updateddata
+}
+
+function evalCode (code, params) {
+  let keys = R.keys(params)
+  let program = (
+    `(function (${keys.join(', ')}) {
+       ${code}
+    })`
+  )
+  return eval(program).apply(null, keys.map(k => params[k]))
 }

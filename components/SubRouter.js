@@ -1,5 +1,5 @@
 const R = require('ramda')
-const h = require('react-hyperscript')
+const h = require('karet-hyperscript')
 const {fromKefir} = require('karet')
 
 const state = require('../state')
@@ -8,6 +8,8 @@ const components = require('./index')
 module.exports = function SubRouter () {
   return fromKefir(state.view('route')
     .map(({route, subroute, props}) => {
+      if (!props || !props.pathname) return h('div')
+
       subroute = subroute || components.get(route).keys().next().value
 
       let basepath = R.head(props.pathname.split('/').filter(R.identity))

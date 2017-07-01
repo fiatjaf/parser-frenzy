@@ -1,4 +1,4 @@
-const h = require('react-hyperscript')
+const h = require('karet-hyperscript')
 const debounce = require('debounce')
 const R = require('ramda')
 const Kefir = require('kefir')

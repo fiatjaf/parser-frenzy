@@ -1,4 +1,4 @@
-const h = require('react-hyperscript')
+const h = require('karet-hyperscript')
 
 const state = require('../state')
 const components = require('./index')

@@ -1,250 +1,238 @@
-const createClass = require('create-react-class')
-const h = require('react-hyperscript')
-const CodeMirror = require('react-codemirror')
+const h = require('karet-hyperscript')
 const cuid = require('cuid')
+const R = require('ramda')
+const L = require('partial.lenses')
+const Kefir = require('kefir')
 
-require('codemirror/mode/lua/lua')
+const CodeMirror = require('react-codemirror')
+require('codemirror/mode/javascript/javascript')
 
-const {onStateChange} = require('../db')
 const log = require('../log')
 
-module.exports = createClass({
-  displayName: 'ListOfRules',
-  getInitialState () {
-    return {
-      db: null,
+const state = require('../state')
+const rules = state.view('rules')
 
-      rules: [],
-      tempValues: {},
+module.exports = function ListOfRules (props) {
+  var list = rules.view('list')
 
-      newpattern: '',
-      newcode: this.defaultCode,
+  if (props.query.rule) {
+    list = list.view(L.find(R.whereEq({_id: props.query.rule})))
+  }
 
-      opened: null,
-      editing: null
-    }
-  },
+  const createRule = (e) => {
+    let cid = cuid.slug()
+    let db = state.view('db').get()
+    let newpattern = rules.view('newpattern').get()
+    let newcode = rules.view('newcode').get()
+    db.put({
+      _id: `rule:${cid}`,
+      pattern: newpattern,
+      code: newcode
+    })
+      .then(R.call(log.success, 'Rule ${cid} created.'))
+      .catch(log.error)
+  }
 
-  defaultCode: `-- lua processing script here.
+  const removeRule = R.partial((rule) => {
+    log.confirm(`Delete "${rule.pattern}" forever?`, () => {
+      let db = state.view('db').get()
+      db.remove(rule)
+        .then(R.call(log.info, 'Rule removed.'))
+        .catch(log.error)
+    })
+  })
 
-`,
+  const updateRule = R.partial((rule, values) => {
+    let db = state.view('db').get()
+    db.put({...rule, ...values})
+      .then(R.call(log.success, 'Rule updated.'))
+      .then(R.call(rules.modify, L.set('editing', null)))
+      .catch(log.error)
+  })
 
-  componentDidMount () {
-    this.cancel = onStateChange(({rules, db}) => this.setState({rules, db}))
-  },
+  return (
+    h('#ListOfRules', [
+      props.query.rule
+        ? null
+        : h('.create.card', [
+          h('.card-header', [
+            h('span.card-header-title', 'Create new rule')
+          ]),
+          h('.card-content', [
+            h('form', {
+              onSubmit: createRule
+            }, [
+              h('p.control', [
+                h('input.input', {
+                  value: rules.view('newpattern'),
+                  onChange (e) { rules.view('newpattern').set(e.target.value) },
+                  placeholder: '<someone:word> [has] paid <value:money> on <date>'
+                })
+              ]),
+              h('div.control', [
+                rules.view('newcode').map(newcode =>
+                  h(CodeMirror, {
+                    value: newcode,
+                    onChange (newcode) { rules.view('newcode').set(newcode) },
+                    options: {
+                      viewportMargin: Infinity,
+                      mode: 'text/javascript'
+                    }
+                  })
+                )
+              ]),
+              h('div.control', [
+                h('button.button', 'Create')
+              ])
+            ])
+          ])
+        ]),
+      h('div', list.map(list => list
+        .map(rule =>
+          h(Rule, {
+            key: rule._id,
+            rule,
+            remove: removeRule([rule]),
+            update: updateRule([rule])
+          })
+        )
+      ))
+    ])
+  )
+}
 
-  componentWillUnmount () {
-    this.cancel()
-  },
+function Rule ({rule, update, remove}) {
+  let {_id} = rule
+  const tempLens = ['tempValues', _id, L.defaults(rule)]
+  const temp = rules.view(tempLens)
 
-  render () {
-    var rules = this.state.rules
+  var parseErrors = []
+  var facts = []
+  var errors = []
 
-    if (this.props.query.rule) {
-      rules = rules.filter(({_id}) => _id === this.props.query.rule)
-    }
-
-    let createRule = h('.create.card', [
+  return (
+    h('.card.rule', {
+      className: Kefir.combine([
+        rules.view('opened'),
+        rules.view('editing')
+      ])
+        .map(([o, e]) => [o ? 'open' : 'closed', e ? 'editing' : 'not-editing'].join(' '))
+    }, [
       h('.card-header', [
-        h('span.card-header-title', 'Create new rule')
-      ]),
-      h('.card-content', [
-        h('form', {
-          onSubmit: this.create
+        h('span.card-header-title', [
+          `rule ${_id.split(':')[1]} `,
+          rules.view('opened').map(o => !o &&
+            parseErrors &&
+              h('a.tag.is-warning', {
+                'data-balloon': "couldn't parse this rule.",
+                onClick (e) {
+                  rules.modify(L.set(L.pick({o: 'opened', e: 'editing'}), {o: _id, e: null}))
+                }
+              }, 'invalid') || null
+          ),
+          rules.view('opened').map(o => !o &&
+            facts.length > 0 &&
+              h('a.tag.is-info', {
+                'data-balloon': `${facts.length} facts matched.`,
+                onClick (e) {
+                  rules.modify(L.set(L.pick({o: 'opened', e: 'editing'}), {o: _id, e: null}))
+                }
+              }, facts.length) || null
+          ),
+          rules.view('opened').map(o => !o &&
+            errors.length > 0 &&
+              h('a.tag.is-danger', {
+                'data-balloon': `${errors.length} errored.`,
+                onClick (e) {
+                  rules.modify(L.set(L.pick({o: 'opened', e: 'editing'}), {o: _id, e: null}))
+                }
+              }, errors.length) || null
+          )
+        ]),
+        h('a.card-header-icon', {
+          onClick (e) {
+            rules.modify(L.modify(
+              L.pick({o: 'opened', e: 'editing'}),
+              ({o, e}) => o === _id ? {o: null, e: null} : {o: _id, e: null})
+            )
+          }
         }, [
-          h('p.control', [
-            h('input.input', {
-              value: this.state.newpattern,
-              onChange: e => this.setState({newpattern: e.target.value}),
-              'data-balloon': 'a valid Javascript regex pattern',
-              placeholder: '<someone:word> [has] paid <value:money> on <date>'
-            })
-          ]),
-          h('div.control', [
-            h(CodeMirror, {
-              value: this.state.newcode,
-              onChange: newcode => this.setState({newcode}),
-              options: {
-                viewportMargin: Infinity,
-                mode: 'lua'
-              }
-            })
-          ]),
-          h('div.control', [
-            h('button.button', 'Create')
+          h('span.icon', [
+            rules.view('opened').map(o => o
+              ? h('i.fa.fa-angle-down')
+              : h('i.fa.fa-angle-up')
+            )
           ])
         ])
-      ])
-    ])
-
-    let renderRule = (
-      {_id, _rev, pattern, code, parseErrors, facts, errors},
-      temp, opened, editing
-    ) =>
-      h(`.card.rule.${opened ? 'open' : 'closed'}.${editing ? 'editing' : 'not-editing'}`, {key: _id}, [
-        h('.card-header', [
-          h('span.card-header-title', [
-            `rule ${_id.split(':')[1]} `,
-            !opened &&
-              parseErrors &&
-                h('a.tag.is-warning', {
-                  'data-balloon': "couldn't parse this rule.",
-                  onClick: e => this.toggleOpen(_id, e)
-                }, 'invalid') || null,
-            !opened &&
-              facts.length > 0 &&
-                h('a.tag.is-info', {
-                  'data-balloon': `${facts.length} facts matched.`,
-                  onClick: e => this.toggleOpen(_id, e)
-                }, facts.length) || null,
-            !opened &&
-              errors.length > 0 &&
-                h('a.tag.is-danger', {
-                  'data-balloon': `${errors.length} errored.`,
-                  onClick: e => this.toggleOpen(_id, e)
-                }, errors.length) || null
-          ]),
-          h('a.card-header-icon', { onClick: e => this.toggleOpen(_id, e) }, [
-            h('span.icon', [ h(`i.fa.fa-angle-${opened ? 'down' : 'up'}`) ])
-          ])
+      ]),
+      h('.card-content', [
+        h('p.control', [
+          h('input.input', {
+            onChange (e) { temp.modify(L.set('pattern', e.target.value)) },
+            value: temp.view('pattern'),
+            disabled: rules.view('editing').map(e => e !== _id)
+          })
         ]),
-        h('.card-content', [
-          h('p.control', [
-            h('input.input', {
-              value: editing ? temp.pattern : pattern,
-              onChange: e => this.changed('pattern', _id, e.target.value),
-              disabled: !editing
-            })
-          ]),
-          h('div.control', [
-            h(CodeMirror, {
-              value: editing ? temp.code : code,
-              onChange: val => this.changed('code', _id, val),
+        h('div.control', [
+          rules.view(L.pick({code: [tempLens, 'code'], e: 'editing'})).map(({code, e}) => {
+            return h(CodeMirror, {
+              value: code,
+              onChange (v) {
+                temp.modify(L.set('code', v))
+              },
               options: {
-                viewportMargin: editing ? Infinity : 7,
-                mode: 'lua',
-                readOnly: editing ? false : 'nocursor'
+                viewportMargin: e === _id ? Infinity : 7,
+                mode: 'text/javascript',
+                readOnly: e === _id ? false : 'nocursor'
               }
             })
-          ]),
-          opened && parseErrors && h('div', parseErrors.map(({message}) =>
-            h('p', [
-              h('span.tag.is-warning', 'pattern invalid'), ' ',
-              h('code', message)
-            ])
-          )) || null,
-          opened && h('div', facts.map(({line, data}) =>
-            h('p', [
-              h('span.tag.is-info', 'matched'), ' ',
-              h('code', line), ' yielding ',
-              h('span.tag.is-dark', Object.keys(data).map(k => `${k}:${data[k]}`).join(' '))
-            ])
-          )) || null,
-          opened && h('div', errors.map(({error, line}) =>
-            h('p', [
-              h('span.tag.is-danger', 'error'), ' ',
-              h('code', error), ' at ', h('code', line)
-            ])
-          )) || null
+          })
         ]),
-        opened && h('.card-footer', [
-          h('.card-footer-item', [
-            h('a', { onClick: e => this.remove(_id, _rev, e) }, 'Delete')
-          ]),
-          h('.card-footer-item', [
-            editing
-            ? h('a', { onClick: e => this.saveEdits(_id, _rev, e) }, 'Save')
-            : h('a', { onClick: e => this.startEditing(_id, code, pattern, e) }, 'Edit')
+        rules.view('opened').map(o => o
+          ? h('div', [
+            h('div', parseErrors.map(({message}) =>
+              h('p', [
+                h('span.tag.is-warning', 'pattern invalid'), ' ',
+                h('code', message)
+              ])
+            )),
+            h('div', facts.map(({line, data}) =>
+              h('p', [
+                h('span.tag.is-info', 'matched'), ' ',
+                h('code', line), ' yielding ',
+                h('span.tag.is-dark',
+                  Object.keys(data).map(k => `${k}:${data[k]}`).join(' ')
+                )
+              ])
+            )),
+            h('div', errors.map(({error, line}) =>
+              h('p', [
+                h('span.tag.is-danger', 'error'), ' ',
+                h('code', error), ' at ', h('code', line)
+              ])
+            ))
           ])
-        ]) || null
-      ])
-
-    return (
-      h('#ListOfRules', [
-        !this.props.query.rule ? createRule : null,
-        h('div', rules.map(rule =>
-          renderRule(
-            rule,
-            this.state.tempValues[rule._id],
-            this.state.opened === rule._id,
-            this.state.editing === rule._id
+          : null
+        )
+      ]),
+      rules.view('opened').map(o => o && h('.card-footer', [
+        h('.card-footer-item', [
+          h('a', { onClick: remove }, 'Delete')
+        ]),
+        h('.card-footer-item', [
+          Kefir.combine([
+            rules.view('editing'),
+            temp
+          ]).map(([e, t]) => e
+            ? h('a', { onClick (e) { update(t) }}, 'Save')
+            : h('a', {
+              onClick (e) {
+                rules.modify(L.set(L.pick({o: 'opened', e: 'editing'}), {o: _id, e: _id}))
+              }
+            }, 'Edit')
           )
-        ))
-      ])
-    )
-  },
-
-  create (e) {
-    e.preventDefault()
-    let cid = cuid.slug()
-    this.state.db.put({
-      _id: `rule:${cid}`,
-      pattern: this.state.newpattern,
-      code: this.state.newcode
-    })
-    .then(() => {
-      this.setState({
-        newpattern: '',
-        newcode: this.defaultCode
-      })
-      log.info(`rule ${cid} created.`)
-    })
-    .then(() => this.forceUpdate())
-    .catch(log.error)
-  },
-
-  changed (what, _id, val) {
-    this.setState(st => {
-      st.tempValues[_id][what] = val
-      return st
-    })
-  },
-
-  saveEdits (_id, _rev, e) {
-    e.preventDefault()
-    let temp = this.state.tempValues[_id]
-    this.state.db.put({
-      _id,
-      _rev,
-      pattern: temp.pattern,
-      code: temp.code
-    })
-    .then(() => {
-      log.info(`rule ${_id.split(':')[1]} updated.`)
-      this.setState(st => {
-        delete st.tempValues[_id]
-        st.editing = null
-        return st
-      })
-    })
-    .catch(log.error)
-  },
-
-  remove (_id, _rev, e) {
-    e.preventDefault()
-    this.state.db.remove(_id, _rev)
-    .then(() => log.info(`removed rule ${_id.split(':')[1]}.`))
-    .then(() => this.forceUpdate())
-    .catch(log.error)
-  },
-
-  toggleOpen (_id, e) {
-    e.preventDefault()
-    if (this.state.opened === _id) {
-      this.setState({editing: null, opened: null})
-    } else {
-      this.setState({editing: null, opened: _id})
-    }
-  },
-
-  startEditing (_id, code, pattern, e) {
-    e.preventDefault()
-    this.setState(st => {
-      st.opened = _id
-      st.editing = _id
-      st.tempValues[_id] = st.tempValues[_id] || {code, pattern}
-      return st
-    })
-  }
-})
-
+        ])
+      ]) || null)
+    ])
+  )
+}

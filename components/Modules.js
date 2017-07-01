@@ -1,5 +1,5 @@
 const createClass = require('create-react-class')
-const h = require('react-hyperscript')
+const h = require('karet-hyperscript')
 const CodeMirror = require('react-codemirror')
 
 require('codemirror/mode/lua/lua')

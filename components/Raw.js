@@ -1,37 +1,19 @@
-const createClass = require('create-react-class')
-const h = require('react-hyperscript')
+const h = require('karet-hyperscript')
+const L = require('partial.lenses')
 
-const {onStateChange} = require('../db')
+const data = require('../data')
 
-module.exports = createClass({
-  displayName: 'Raw',
-  getInitialState () {
-    return {
-      store: {}
-    }
-  },
+module.exports = function Raw (props) {
+  let at = props.query && props.query.at && props.query.at.split('.') || []
 
-  componentDidMount () {
-    this.cancel = onStateChange(({store}) => this.setState({store}), ['store'])
-  },
-
-  componentWillUnmount () {
-    this.cancel()
-  },
-
-  render () {
-    let at = this.props.query && this.props.query.at && this.props.query.at.split('.') || []
-
-    var cur = this.state.store
-    for (let i = 0; i < at.length; i++) {
-      cur[at[i]] = cur[at[i]] || {}
-      cur = cur[at[i]]
-    }
-
-    return (
-      h('#Raw', [
-        h('pre', [ h('code', JSON.stringify(cur, null, 2)) ])
+  return (
+    h('#Raw', [
+      h('pre', [
+        h('code', data
+          .map(d => L.get(at, d))
+          .map(d => JSON.stringify(d, null, 2))
+        )
       ])
-    )
-  }
-})
+    ])
+  )
+}

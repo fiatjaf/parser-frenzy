@@ -1,4 +1,4 @@
-const h = require('react-hyperscript')
+const h = require('karet-hyperscript')
 const cuid = require('cuid')
 const L = require('partial.lenses')
 const R = require('ramda')
@@ -33,7 +33,7 @@ module.exports = function Input () {
 
   const updateFact = R.partial((fact, values) => {
     let db = state.view('db').get()
-    db.put({fact, ...values})
+    db.put({...fact, ...values})
       .then(R.call(log.success, 'Fact updated.'))
       .then(R.call(facts.modify, L.set('editing', null)))
       .catch(log.error)
@@ -56,12 +56,12 @@ module.exports = function Input () {
         ])
       ]),
       h('div', facts.view(['list', L.defaults([])]).map(facts => facts
-        .map(f =>
+        .map(fact =>
           h(Fact, {
-            key: f._id,
-            fact: f,
-            remove: removeFact([f]),
-            update: updateFact([f])
+            key: fact._id,
+            fact,
+            remove: removeFact([fact]),
+            update: updateFact([fact])
           })
         )
       ))

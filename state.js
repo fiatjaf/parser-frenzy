@@ -5,11 +5,7 @@ const U = require('karet.util')
 const L = require('partial.lenses')
 const R = require('ramda')
 
-const log = require('./log')
 const databases = require('./databases')
-const {parseRule} = require('./helpers/parser-parser')
-const {makeLineParser} = require('./helpers/parser')
-const process = require('./process')
 
 const initial = {
   chosen: null,
@@ -17,7 +13,7 @@ const initial = {
   route: {
     route: 'facts',
     subroute: 'input',
-    props: null
+    props: {}
   },
   facts: {
     editing: null,
@@ -26,7 +22,12 @@ const initial = {
     tempValues: {}
   },
   rules: {
-    list: []
+    newpattern: '',
+    newcode: '',
+    editing: null,
+    opened: null,
+    list: [],
+    tempValues: {}
   },
   checkpoints: {
     typed: '',
@@ -44,7 +45,7 @@ const initial = {
 let chosen = databases.current()
 
 const state = U.atom({...initial, chosen, db: new PouchDB(chosen.id)})
-state.log('state')
+state.debounce(200).log('state')
 module.exports = state
 window.state = state
 
