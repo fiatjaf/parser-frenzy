@@ -1,5 +1,4 @@
 const h = require('karet-hyperscript')
-const cuid = require('cuid')
 const L = require('partial.lenses')
 const R = require('ramda')
 
@@ -15,7 +14,7 @@ module.exports = function Input () {
     let db = state.view('db').get()
     let line = facts.view('adding').get()
     db.put({
-      _id: `f:${cuid.slug()}`,
+      _id: `f:${parseInt((new Date).getTime() / 1000)}`,
       line
     })
       .then(R.call(log.success, 'Fact added.'))
